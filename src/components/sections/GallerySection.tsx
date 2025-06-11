@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -5,7 +6,7 @@ import Image from 'next/image';
 import { m, AnimatePresence } from 'framer-motion';
 import { galleryImages, type GalleryImage } from '@/data/galleryImages';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
-import { Dialog, DialogContent, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger, DialogClose, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { XIcon, ZoomInIcon } from 'lucide-react';
 
@@ -57,6 +58,7 @@ export function GallerySection() {
           {selectedImage && (
             <Dialog open={!!selectedImage} onOpenChange={(isOpen) => !isOpen && setSelectedImage(null)}>
               <DialogContent className="p-0 border-0 max-w-3xl w-full bg-transparent shadow-none">
+                <DialogTitle className="sr-only">{selectedImage.alt}</DialogTitle>
                 <m.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -85,3 +87,4 @@ export function GallerySection() {
     </section>
   );
 }
+
