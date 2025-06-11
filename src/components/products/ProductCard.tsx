@@ -1,10 +1,11 @@
+
 "use client";
 
 import Image from 'next/image';
 import { m } from 'framer-motion';
 import type { Product } from '@/data/products';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'; // Using Card for structure
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ProductCardProps {
   product: Product;
@@ -21,21 +22,21 @@ export function ProductCard({ product }: ProductCardProps) {
       whileHover={{ scale: 1.03, y: -5 }}
       className="glass-card glass-interactive overflow-hidden h-full flex flex-col"
     >
-      <CardHeader className="p-0 relative aspect-[3/4] w-full overflow-hidden">
+      <CardHeader className="p-0 relative aspect-square w-full overflow-hidden">
         <Image
           src={product.image}
           alt={product.name}
-          width={600}
-          height={800}
+          width={400}
+          height={400}
           className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
         />
       </CardHeader>
-      <CardContent className="p-4 flex-grow">
-        <CardTitle className="font-headline text-xl mb-1 text-foreground">{product.name}</CardTitle>
-        <CardDescription className="text-sm text-muted-foreground mb-3">{product.description}</CardDescription>
+      <CardContent className="p-3 flex-grow">
+        <CardTitle className="font-headline text-lg mb-1 text-foreground">{product.name}</CardTitle>
+        <CardDescription className="text-xs text-muted-foreground mb-2">{product.description}</CardDescription>
       </CardContent>
-      <CardFooter className="p-4 pt-0">
-        <Badge variant="secondary" className="bg-accent/20 text-accent-foreground border-accent/30">
+      <CardFooter className="p-3 pt-0">
+        <Badge variant="secondary" className="bg-accent/20 text-accent-foreground border-accent/30 text-xs">
           {product.category}
         </Badge>
       </CardFooter>

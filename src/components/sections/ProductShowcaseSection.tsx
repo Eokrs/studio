@@ -31,7 +31,11 @@ export function ProductShowcaseSection() {
         setProductCategories(fetchedCategories);
       } catch (err) {
         console.error("Failed to fetch product data:", err);
-        setError("Falha ao carregar os produtos. Por favor, tente novamente mais tarde.");
+        let errorMessage = "Falha ao carregar os produtos. Por favor, tente novamente mais tarde.";
+        if (err instanceof Error) {
+            errorMessage = err.message; // Use the specific error from Supabase if available
+        }
+        setError(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -63,17 +67,17 @@ export function ProductShowcaseSection() {
               <Skeleton key={i} className="h-10 w-24 rounded-md bg-muted/50" />
             ))}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
-            {Array.from({ length: 8 }).map((_, index) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
+            {Array.from({ length: 10 }).map((_, index) => (
               <div key={index} className="glass-card overflow-hidden h-full flex flex-col p-1.5">
-                <Skeleton className="aspect-[3/4] w-full rounded-md bg-muted/50" />
-                <div className="p-4 flex-grow">
-                  <Skeleton className="h-6 w-3/4 mb-2 bg-muted/50" />
-                  <Skeleton className="h-4 w-full mb-3 bg-muted/50" />
-                  <Skeleton className="h-4 w-2/3 mb-3 bg-muted/50" />
+                <Skeleton className="aspect-square w-full rounded-md bg-muted/50" />
+                <div className="p-3 flex-grow">
+                  <Skeleton className="h-5 w-3/4 mb-2 bg-muted/50" />
+                  <Skeleton className="h-3 w-full mb-2 bg-muted/50" />
+                  <Skeleton className="h-3 w-2/3 mb-2 bg-muted/50" />
                 </div>
-                <div className="p-4 pt-0">
-                  <Skeleton className="h-6 w-1/3 rounded-full bg-muted/50" />
+                <div className="p-3 pt-0">
+                  <Skeleton className="h-5 w-1/3 rounded-full bg-muted/50" />
                 </div>
               </div>
             ))}
@@ -90,9 +94,9 @@ export function ProductShowcaseSection() {
            <h2 className="font-headline text-4xl md:text-5xl font-bold text-center mb-4 text-destructive">
               Ocorreu um Erro
             </h2>
-          <div className="flex flex-col items-center justify-center bg-destructive/10 p-8 rounded-lg">
+          <div className="flex flex-col items-center justify-center bg-destructive/10 p-8 rounded-lg max-w-2xl mx-auto">
             <AlertTriangle className="w-16 h-16 text-destructive mb-4" />
-            <p className="text-lg text-destructive">{error}</p>
+            <p className="text-lg text-destructive-foreground bg-destructive p-4 rounded-md">{error}</p>
           </div>
         </div>
       </section>
@@ -121,7 +125,7 @@ export function ProductShowcaseSection() {
         
         <m.div
           layout
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6"
         >
           <AnimatePresence>
             {filteredProducts.map((product, index) => (
