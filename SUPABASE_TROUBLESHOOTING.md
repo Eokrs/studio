@@ -64,7 +64,5 @@ O arquivo `supabase_schema.sql` fornecido anteriormente deve ter criado a estrut
 
 **Erro comum: "column ... does not exist"**
 Se você vir um erro como `column products.alguma_coluna does not exist`, significa que a coluna `alguma_coluna` não existe na sua tabela `products` no Supabase, ou foi nomeada de forma diferente.
-- **Verifique o nome da coluna:** No seu painel Supabase (Table Editor -> products), confirme se a coluna existe e se o nome está exatamente como o código espera (por exemplo, `dataAiHint`, `is_active`, `created_at`).
+- **Verifique o nome da coluna:** No seu painel Supabase (Table Editor -> products), confirme se a coluna existe e se o nome está exatamente como o código espera (por exemplo, `is_active`, `created_at`).
 - **Consulte `supabase_schema.sql`:** Este arquivo contém a definição correta da tabela. Se necessário, você pode precisar alterar sua tabela no Supabase para corresponder a este esquema. Considere executar novamente o `CREATE TABLE` (após fazer um backup ou dropar a tabela se não houver dados críticos) para garantir que o esquema esteja correto.
-```
-

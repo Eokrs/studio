@@ -28,7 +28,6 @@ export function ProductCard({ product }: ProductCardProps) {
           width={600}
           height={800}
           className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
-          data-ai-hint={product.dataAiHint}
         />
       </CardHeader>
       <CardContent className="p-4 flex-grow">

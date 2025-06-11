@@ -5,7 +5,6 @@ export interface Product {
   description: string;
   image: string;
   category: string;
-  dataAiHint: string;
   // These fields might come from Supabase but may not be directly used by all components
   // If ProductCard or other components need them, ensure they are part of this interface.
   // is_active?: boolean; 
@@ -25,7 +24,7 @@ export interface Product {
 //     description: "Tecnologia de ponta com design elegante e display vibrante.",
 //     image: "https://placehold.co/600x800.png",
 //     category: "Eletrônicos",
-//     dataAiHint: "smartphone modern",
 //   },
 //   // ... other mock products
 // ];
+

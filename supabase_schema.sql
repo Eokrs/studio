@@ -1,74 +1,73 @@
+-- Supabase Schema for Vidro Showcase
 
--- Criação da tabela de produtos
-CREATE TABLE IF NOT EXISTS public.products (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  description TEXT,
-  image TEXT, -- URL da imagem
-  category TEXT,
-  dataAiHint TEXT, -- Adicionada a coluna dataAiHint
-  is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Comentários sobre a tabela e colunas (opcional, mas bom para documentação)
-COMMENT ON TABLE public.products IS 'Tabela para armazenar informações sobre os produtos da Vidro Showcase.';
-COMMENT ON COLUMN public.products.id IS 'Identificador único para cada produto (UUID).';
-COMMENT ON COLUMN public.products.name IS 'Nome do produto.';
-COMMENT ON COLUMN public.products.description IS 'Descrição detalhada do produto.';
-COMMENT ON COLUMN public.products.image IS 'URL da imagem principal do produto.';
-COMMENT ON COLUMN public.products.category IS 'Categoria à qual o produto pertence (ex: Eletrônicos, Decoração).';
-COMMENT ON COLUMN public.products.dataAiHint IS 'Dica para IA sobre o conteúdo da imagem (ex: "modern smartphone").';
-COMMENT ON COLUMN public.products.is_active IS 'Indica se o produto está ativo e deve ser exibido (TRUE) ou não (FALSE).';
-COMMENT ON COLUMN public.products.created_at IS 'Data e hora de criação do registro do produto.';
-
--- Inserção de dados de exemplo (mock data)
--- Certifique-se de que as URLs das imagens sejam válidas ou use placeholders
-INSERT INTO public.products (name, description, image, category, dataAiHint, is_active) VALUES
-('Smartphone Avançado Pro', 'Tecnologia de ponta com design elegante, display OLED vibrante e câmeras de alta resolução.', 'https://placehold.co/600x800.png', 'Eletrônicos', 'smartphone modern', TRUE),
-('Luminária de Mesa Minimalista', 'Design escandinavo, iluminação suave e ajustável, perfeita para leitura ou trabalho.', 'https://placehold.co/600x800.png', 'Decoração', 'desk lamp', TRUE),
-('Tênis Esportivo ConfortMax', 'Ideal para corridas e treinos, com amortecimento responsivo e cabedal respirável.', 'https://placehold.co/600x800.png', 'Vestuário', 'sports shoes', TRUE),
-('Fone de Ouvido Sem Fio SoundWave', 'Qualidade de som imersiva, cancelamento de ruído ativo e bateria de longa duração.', 'https://placehold.co/600x800.png', 'Eletrônicos', 'wireless headphones', TRUE),
-('Vaso Decorativo Geométrico', 'Peça central elegante para sua sala, feito em cerâmica com acabamento fosco.', 'https://placehold.co/600x800.png', 'Decoração', 'geometric vase', FALSE),
-('Smartwatch Fitness Tracker', 'Monitore sua saúde e atividades físicas com estilo. GPS integrado e múltiplos modos esportivos.', 'https://placehold.co/600x800.png', 'Eletrônicos', 'fitness smartwatch', TRUE),
-('Mochila Urbana Antifurto', 'Design moderno e funcional, com compartimentos seguros e material resistente à água.', 'https://placehold.co/600x800.png', 'Acessórios', 'urban backpack', TRUE),
-('Jaqueta Corta-Vento Performance', 'Leve, compacta e resistente ao vento, perfeita para atividades ao ar livre.', 'https://placehold.co/600x800.png', 'Vestuário', 'windbreaker jacket', TRUE),
-('Kit de Potes Herméticos Cozinha', 'Organize sua despensa com estilo. Mantém os alimentos frescos por mais tempo.', 'https://placehold.co/600x800.png', 'Utilidades Domésticas', 'kitchen canisters', TRUE),
-('Cadeira Gamer Ergonômica X Racer', 'Conforto máximo para longas sessões de jogo, com ajustes personalizáveis e design arrojado.', 'https://placehold.co/600x800.png', 'Móveis', 'gaming chair', TRUE);
-
--- Exemplo de como habilitar Row Level Security (RLS) na tabela (se ainda não estiver habilitado)
--- Você pode fazer isso pela interface do Supabase ou com o seguinte SQL:
+-- Enable Row Level Security (RLS) on the products table
+-- This is a good security practice. You'll need to define policies
+-- for who can access the data.
+-- Example:
 -- ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
--- IMPORTANTE: Se você habilitar RLS, precisará criar políticas para permitir o acesso.
 
--- Exemplo de política para permitir leitura pública (SELECT) na tabela products:
+-- Policy to allow public read access to products
+-- This allows anyone (even unauthenticated users) to read all products.
+-- Adjust as needed for your security requirements.
+-- Example:
 -- CREATE POLICY "Public products are viewable by everyone"
 -- ON public.products
 -- FOR SELECT
 -- USING (true);
 
--- Exemplo de política para permitir que usuários autenticados insiram produtos:
+-- Policy to allow authenticated users to insert products (example)
 -- CREATE POLICY "Allow authenticated users to insert products"
 -- ON public.products
 -- FOR INSERT
--- WITH CHECK (auth.role() = 'authenticated');
+-- TO authenticated
+-- WITH CHECK (true);
 
--- Exemplo de política para permitir que usuários donos de um produto (ou administradores) o atualizem/deletem:
--- (Supondo uma coluna user_id na tabela products que armazena o ID do usuário criador)
--- CREATE POLICY "Allow owners to update their products"
+-- Drop the table if it exists (for a clean start, be careful with existing data)
+DROP TABLE IF EXISTS public.products;
+
+-- Create the products table
+CREATE TABLE IF NOT EXISTS public.products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    description TEXT,
+    image TEXT, -- URL to the image
+    category TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Insert some sample product data
+INSERT INTO public.products (name, description, image, category) VALUES
+('Smartphone Vision X', 'Tecnologia de ponta com display imersivo e câmera avançada.', 'https://placehold.co/600x800.png', 'Eletrônicos'),
+('Luminária Nórdica Minimal', 'Design escandinavo que combina elegância e simplicidade.', 'https://placehold.co/600x800.png', 'Decoração'),
+('Tênis Urbano Confort', 'Conforto e estilo para o dia a dia na cidade.', 'https://placehold.co/600x800.png', 'Vestuário'),
+('Bolsa Transversal Couro Premium', 'Acessório sofisticado para complementar qualquer look.', 'https://placehold.co/600x800.png', 'Acessórios'),
+('Fone de Ouvido Sem Fio AuraSound', 'Qualidade de som superior com cancelamento de ruído ativo.', 'https://placehold.co/600x800.png', 'Eletrônicos'),
+('Vaso Cerâmica Artesanal Terra', 'Peça única feita à mão para adicionar charme ao ambiente.', 'https://placehold.co/600x800.png', 'Decoração'),
+('Camisa Casual Algodão Pima', 'Tecido macio e respirável para máximo conforto.', 'https://placehold.co/600x800.png', 'Vestuário'),
+('Relógio Clássico Elegance', 'Design atemporal com pulseira de aço inoxidável.', 'https://placehold.co/600x800.png', 'Acessórios'),
+('Tablet Pro Performance 11"', 'Ideal para trabalho e entretenimento, com tela de alta resolução.', 'https://placehold.co/600x800.png', 'Eletrônicos'),
+('Conjunto de Almofadas Geométricas', 'Adicione um toque moderno e aconchegante ao seu sofá.', 'https://placehold.co/600x800.png', 'Decoração');
+
+-- Note on dataAiHint:
+-- The 'dataAiHint' column was previously included. If you are re-running this script
+-- on a database that had this column, it has been removed from this version.
+-- If you encounter errors related to 'dataAiHint' not existing from your application,
+-- ensure your application code (productActions.ts, Product interface, etc.) no longer
+-- tries to select or use this column.
+
+-- After running this script, ensure your RLS policies are set up correctly
+-- if RLS is enabled on the 'products' table.
+-- For public read access, you would typically need a policy like:
+-- CREATE POLICY "Public products are viewable by everyone"
 -- ON public.products
--- FOR UPDATE
--- USING (auth.uid() = user_id)
--- WITH CHECK (auth.uid() = user_id);
-
--- CREATE POLICY "Allow owners to delete their products"
+-- FOR SELECT
+-- USING (is_active = true); -- Example: only show active products
+-- OR for all products:
+-- CREATE POLICY "Public products are viewable by everyone"
 -- ON public.products
--- FOR DELETE
--- USING (auth.uid() = user_id);
+-- FOR SELECT
+-- USING (true);
 
--- Lembre-se de adaptar as políticas RLS às suas necessidades específicas de segurança.
--- Para o projeto atual, onde os produtos são públicos, a política "Public products are viewable by everyone" é a mais relevante.
--- Se a sua tabela já tiver a política "Public products are viewable by everyone" de um passo anterior,
--- você pode precisar rodar: DROP POLICY IF EXISTS "Public products are viewable by everyone" ON public.products;
--- antes de recriá-la se estiver fazendo alterações na estrutura da tabela que afetem a política.
--- No entanto, para adicionar uma coluna, geralmente não é necessário recriar a política de SELECT.
+-- Remember to check your Supabase dashboard under Authentication -> Policies
+-- for the 'products' table.

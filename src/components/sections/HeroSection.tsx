@@ -20,7 +20,6 @@ export function HeroSection() {
         objectFit="cover"
         quality={80}
         className="z-0 opacity-40 dark:opacity-30"
-        data-ai-hint="abstract background"
         priority
       />
       <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/80 to-background z-0 backdrop-blur-sm"></div>

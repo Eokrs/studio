@@ -84,7 +84,6 @@ export function AboutSection() {
                 width={600}
                 height={600}
                 className="rounded-lg object-cover"
-                data-ai-hint={content.imageAiHint}
               />
             </div>
           </ScrollReveal>

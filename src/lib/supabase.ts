@@ -24,7 +24,6 @@ export interface Database {
           description: string;
           image: string;
           category: string;
-          dataAiHint: string;
           is_active: boolean;
           created_at: string; 
         };
@@ -34,7 +33,6 @@ export interface Database {
           description: string;
           image: string;
           category: string;
-          dataAiHint: string;
           is_active?: boolean; // Default to true
           created_at?: string; // Usually auto-generated
         };
@@ -44,7 +42,6 @@ export interface Database {
           description?: string;
           image?: string;
           category?: string;
-          dataAiHint?: string;
           is_active?: boolean;
           created_at?: string;
         };

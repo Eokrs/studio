@@ -14,7 +14,6 @@ export interface AboutContent {
   paragraph3: string;
   imageUrl: string;
   imageAlt: string;
-  imageAiHint: string;
 }
 
 // Mock data for About Section, simulating a database record
@@ -25,7 +24,6 @@ const aboutData: AboutContent = {
   paragraph3: "Explore um universo onde a forma encontra a função, e a beleza se manifesta em cada peça.",
   imageUrl: "https://placehold.co/600x600.png",
   imageAlt: "Sobre Vidro Showcase",
-  imageAiHint: "modern office",
 };
 
 
@@ -34,3 +32,4 @@ export async function getAboutContent(): Promise<AboutContent> {
   await new Promise(resolve => setTimeout(resolve, 400)); // Simulate network delay
   return aboutData;
 }
+

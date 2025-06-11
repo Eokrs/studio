@@ -15,7 +15,7 @@ export async function getProducts(): Promise<Product[]> {
 
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, description, image, category, dataAiHint, created_at, is_active') // Explicitly list columns
+    .select('id, name, description, image, category, created_at, is_active') // Explicitly list columns, removed dataAiHint
     .eq('is_active', true)
     .order('created_at', { ascending: false });
 
@@ -23,8 +23,8 @@ export async function getProducts(): Promise<Product[]> {
     console.error('Supabase error fetching products:', error);
     // Throw a more informative error to the client
     let detailedMessage = `Não foi possível carregar os produtos. Erro do Supabase: "${error.message}".`;
-    if (error.message.includes("column products.dataAiHint does not exist")) {
-      detailedMessage += " Parece que a coluna 'dataAiHint' está faltando na sua tabela 'products'. Verifique o arquivo 'supabase_schema.sql' e garanta que sua tabela no Supabase foi criada corretamente com todas as colunas, incluindo 'dataAiHint TEXT'.";
+    if (error.message.includes("column") && error.message.includes("does not exist")) {
+      detailedMessage += ` Parece que uma coluna está faltando na sua tabela 'products' ou tem um nome diferente do esperado. Verifique o arquivo 'supabase_schema.sql' e garanta que sua tabela no Supabase foi criada corretamente com todas as colunas.`;
     }
     detailedMessage += " Verifique os logs do servidor para detalhes e confirme suas políticas de Row Level Security (RLS) para a tabela 'products'. Consulte SUPABASE_TROUBLESHOOTING.md.";
     throw new Error(detailedMessage);

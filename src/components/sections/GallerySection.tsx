@@ -105,7 +105,6 @@ export function GallerySection() {
                       width={600}
                       height={600}
                       className="object-cover w-full h-full rounded-md transition-transform duration-300 group-hover:scale-110"
-                      data-ai-hint={img.dataAiHint}
                     />
                     <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <ZoomInIcon className="w-10 h-10 text-white" />
@@ -145,7 +144,6 @@ export function GallerySection() {
                     width={1200}
                     height={900}
                     className="rounded-lg object-contain max-h-[80vh] w-auto mx-auto"
-                    data-ai-hint={selectedImage.dataAiHint}
                   />
                   <DialogClose asChild>
                     <Button variant="ghost" size="icon" className="absolute top-2 right-2 bg-background/50 hover:bg-background/80 rounded-full">
