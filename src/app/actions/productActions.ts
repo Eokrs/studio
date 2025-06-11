@@ -22,7 +22,12 @@ export async function getProducts(): Promise<Product[]> {
   if (error) {
     console.error('Supabase error fetching products:', error);
     // Throw a more informative error to the client
-    throw new Error(`Não foi possível carregar os produtos. Erro do Supabase: "${error.message}". Verifique os logs do servidor para detalhes e confirme suas políticas de Row Level Security (RLS) para a tabela 'products'. Consulte SUPABASE_TROUBLESHOOTING.md.`);
+    let detailedMessage = `Não foi possível carregar os produtos. Erro do Supabase: "${error.message}".`;
+    if (error.message.includes("column products.dataAiHint does not exist")) {
+      detailedMessage += " Parece que a coluna 'dataAiHint' está faltando na sua tabela 'products'. Verifique o arquivo 'supabase_schema.sql' e garanta que sua tabela no Supabase foi criada corretamente com todas as colunas, incluindo 'dataAiHint TEXT'.";
+    }
+    detailedMessage += " Verifique os logs do servidor para detalhes e confirme suas políticas de Row Level Security (RLS) para a tabela 'products'. Consulte SUPABASE_TROUBLESHOOTING.md.";
+    throw new Error(detailedMessage);
   }
 
   // The data from Supabase should match the Product interface.
