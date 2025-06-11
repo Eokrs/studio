@@ -21,8 +21,8 @@ export async function getProducts(): Promise<Product[]> {
 
   if (error) {
     console.error('Supabase error fetching products:', error);
-    // Consider more specific error messages or logging
-    throw new Error('Não foi possível carregar os produtos do banco de dados.');
+    // Throw a more informative error to the client
+    throw new Error(`Não foi possível carregar os produtos. Erro do Supabase: "${error.message}". Verifique os logs do servidor para detalhes e confirme suas políticas de Row Level Security (RLS) para a tabela 'products'. Consulte SUPABASE_TROUBLESHOOTING.md.`);
   }
 
   // The data from Supabase should match the Product interface.
@@ -43,7 +43,7 @@ export async function getCategories(): Promise<string[]> {
 
   if (error) {
     console.error('Supabase error fetching categories:', error);
-    throw new Error('Não foi possível carregar as categorias de produtos do banco de dados.');
+    throw new Error(`Não foi possível carregar as categorias. Erro do Supabase: "${error.message}". Verifique os logs do servidor e as políticas RLS.`);
   }
 
   if (!data) {
@@ -54,3 +54,4 @@ export async function getCategories(): Promise<string[]> {
   const uniqueCategories = [...new Set(data.map((item: { category: string }) => item.category))];
   return uniqueCategories.sort();
 }
+
