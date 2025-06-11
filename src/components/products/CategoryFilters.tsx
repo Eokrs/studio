@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Button } from '@/components/ui/button'; // Using Button for consistency
 
 interface CategoryFiltersProps {
@@ -29,7 +29,7 @@ export function CategoryFilters({ categories, selectedCategory, onSelectCategory
         >
           {category}
           {selectedCategory === category && (
-            <motion.div
+            <m.div
               className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
               layoutId="activeCategoryIndicator"
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}

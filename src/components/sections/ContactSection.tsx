@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -62,7 +62,7 @@ export function ContactSection() {
             <p className="text-muted-foreground mb-4">Ou nos encontre nas redes sociais:</p>
             <div className="flex justify-center space-x-4">
               {socialLinks.map(({ Icon, href, label }) => (
-                <motion.a
+                <m.a
                   key={label}
                   href={href}
                   target="_blank"
@@ -72,7 +72,7 @@ export function ContactSection() {
                   className="p-2 rounded-full glass-card glass-interactive"
                 >
                   <Icon className="w-6 h-6 text-foreground/80 hover:text-primary transition-colors" />
-                </motion.a>
+                </m.a>
               ))}
             </div>
           </div>

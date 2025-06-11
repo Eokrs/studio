@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import { motion, type Variants, type HTMLMotionProps } from 'framer-motion';
+import { m, type Variants, type HTMLMotionProps } from 'framer-motion';
 
 interface ScrollRevealProps extends HTMLMotionProps<"div"> {
   children: ReactNode;
@@ -35,7 +35,7 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
   };
 
   return (
-    <motion.div
+    <m.div
       className={className}
       initial="hidden"
       whileInView="visible"
@@ -44,6 +44,6 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
       {...rest}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 };

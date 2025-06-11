@@ -1,7 +1,7 @@
 "use client";
 
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import type { Product } from '@/data/products';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'; // Using Card for structure
@@ -12,7 +12,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   return (
-    <motion.div
+    <m.div
       layout
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -40,6 +40,6 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.category}
         </Badge>
       </CardFooter>
-    </motion.div>
+    </m.div>
   );
 }

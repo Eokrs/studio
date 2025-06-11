@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { products, categories as productCategories } from '@/data/products';
 import { ProductCard } from '@/components/products/ProductCard';
 import { CategoryFilters } from '@/components/products/CategoryFilters';
@@ -37,7 +37,7 @@ export function ProductShowcaseSection() {
           />
         </ScrollReveal>
         
-        <motion.div
+        <m.div
           layout
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8"
         >
@@ -48,16 +48,16 @@ export function ProductShowcaseSection() {
                </ScrollReveal>
             ))}
           </AnimatePresence>
-        </motion.div>
+        </m.div>
 
         {filteredProducts.length === 0 && (
-          <motion.p 
+          <m.p 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-center text-muted-foreground mt-12 text-lg"
           >
             Nenhum produto encontrado para esta categoria.
-          </motion.p>
+          </m.p>
         )}
       </div>
     </section>
