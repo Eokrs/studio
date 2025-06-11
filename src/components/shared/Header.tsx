@@ -17,7 +17,7 @@ export function Header() {
   const navItems = [
     { label: 'Produtos', id: 'produtos' },
     { label: 'Sobre', id: 'sobre' },
-    { label: 'Galeria', id: 'galeria' },
+    // { label: 'Galeria', id: 'galeria' },
     { label: 'Contato', id: 'contato' },
   ];
 

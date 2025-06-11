@@ -1,7 +1,7 @@
 import { HeroSection } from '@/components/sections/HeroSection';
 import { ProductShowcaseSection } from '@/components/sections/ProductShowcaseSection';
 import { AboutSection } from '@/components/sections/AboutSection';
-import { GallerySection } from '@/components/sections/GallerySection';
+// import { GallerySection } from '@/components/sections/GallerySection';
 import { ContactSection } from '@/components/sections/ContactSection';
 import { MotionLazyContainer } from '@/components/animations/MotionLazyContainer';
 
@@ -12,7 +12,7 @@ export default function HomePage() {
       <HeroSection />
       <ProductShowcaseSection />
       <AboutSection />
-      <GallerySection />
+      {/* <GallerySection /> */}
       <ContactSection />
     </MotionLazyContainer>
   );
