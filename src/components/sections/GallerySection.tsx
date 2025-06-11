@@ -1,17 +1,81 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { m, AnimatePresence } from 'framer-motion';
-import { galleryImages, type GalleryImage } from '@/data/galleryImages';
+import type { GalleryImage } from '@/data/galleryImages';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { Dialog, DialogContent, DialogTrigger, DialogClose, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { XIcon, ZoomInIcon } from 'lucide-react';
+import { XIcon, ZoomInIcon, ImageOff, AlertTriangle } from 'lucide-react';
+import { getGalleryImages } from '@/app/actions/galleryActions';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function GallerySection() {
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
+  const [images, setImages] = useState<GalleryImage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchGalleryData() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const fetchedImages = await getGalleryImages();
+        setImages(fetchedImages);
+      } catch (err) {
+        console.error("Failed to fetch gallery images:", err);
+        setError("Falha ao carregar as imagens da galeria. Por favor, tente novamente mais tarde.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchGalleryData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <section id="galeria" className="py-16 lg:py-24 bg-background">
+        <div className="container mx-auto px-4">
+          <ScrollReveal>
+            <h2 className="font-headline text-4xl md:text-5xl font-bold text-center mb-4 text-foreground">
+              Galeria Interativa
+            </h2>
+            <p className="text-lg text-muted-foreground text-center mb-12 max-w-xl mx-auto">
+              Carregando visuais inspiradores...
+            </p>
+          </ScrollReveal>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <ScrollReveal key={index} delay={index * 0.1} className="group">
+                 <div className="relative aspect-square rounded-lg overflow-hidden glass-card p-1.5">
+                    <Skeleton className="w-full h-full rounded-md bg-muted/50" />
+                 </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+     return (
+      <section id="galeria" className="py-16 lg:py-24 bg-background">
+        <div className="container mx-auto px-4 text-center">
+           <h2 className="font-headline text-4xl md:text-5xl font-bold text-center mb-4 text-destructive">
+              Erro ao Carregar Galeria
+            </h2>
+          <div className="flex flex-col items-center justify-center bg-destructive/10 p-8 rounded-lg">
+            <AlertTriangle className="w-16 h-16 text-destructive mb-4" />
+            <p className="text-lg text-destructive">{error}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="galeria" className="py-16 lg:py-24 bg-background">
@@ -26,8 +90,8 @@ export function GallerySection() {
         </ScrollReveal>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-          {galleryImages.map((img, index) => (
-            <ScrollReveal key={img.id} delay={index * 0.1} className="group">
+          {images.map((img, index) => (
+            <ScrollReveal key={img.id} delay={index * 0.05} className="group">
               <Dialog>
                 <DialogTrigger asChild>
                   <m.div
@@ -48,11 +112,21 @@ export function GallerySection() {
                     </div>
                   </m.div>
                 </DialogTrigger>
-                {/* DialogContent will be handled by the selectedImage state and a single Dialog outside the map if preferred, or one per trigger */}
               </Dialog>
             </ScrollReveal>
           ))}
         </div>
+        
+        {images.length === 0 && !isLoading && (
+           <m.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center text-muted-foreground mt-12 text-lg flex flex-col items-center"
+          >
+            <ImageOff className="w-12 h-12 text-muted-foreground mb-2" />
+            Nenhuma imagem encontrada na galeria.
+          </m.div>
+        )}
 
         <AnimatePresence>
           {selectedImage && (
@@ -87,4 +161,3 @@ export function GallerySection() {
     </section>
   );
 }
-

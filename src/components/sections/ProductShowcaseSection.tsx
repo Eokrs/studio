@@ -1,21 +1,103 @@
+
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
-import { products, categories as productCategories } from '@/data/products';
+import type { Product } from '@/data/products';
 import { ProductCard } from '@/components/products/ProductCard';
 import { CategoryFilters } from '@/components/products/CategoryFilters';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
+import { getProducts, getCategories } from '@/app/actions/productActions';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AlertTriangle } from 'lucide-react';
 
 export function ProductShowcaseSection() {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [productCategories, setProductCategories] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const [fetchedProducts, fetchedCategories] = await Promise.all([
+          getProducts(),
+          getCategories()
+        ]);
+        setAllProducts(fetchedProducts);
+        setProductCategories(fetchedCategories);
+      } catch (err) {
+        console.error("Failed to fetch product data:", err);
+        setError("Falha ao carregar os produtos. Por favor, tente novamente mais tarde.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   const filteredProducts = useMemo(() => {
     if (selectedCategory === "Todos") {
-      return products;
+      return allProducts;
     }
-    return products.filter(product => product.category === selectedCategory);
-  }, [selectedCategory]);
+    return allProducts.filter(product => product.category === selectedCategory);
+  }, [selectedCategory, allProducts]);
+
+  if (isLoading) {
+    return (
+      <section id="produtos" className="py-16 lg:py-24 bg-background">
+        <div className="container mx-auto px-4">
+          <ScrollReveal>
+            <h2 className="font-headline text-4xl md:text-5xl font-bold text-center mb-4 text-foreground">
+              Nossa Vitrine
+            </h2>
+            <p className="text-lg text-muted-foreground text-center mb-12 max-w-xl mx-auto">
+              Carregando produtos incríveis para você...
+            </p>
+          </ScrollReveal>
+          <div className="flex flex-wrap justify-center gap-2 mb-8">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-24 rounded-md bg-muted/50" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="glass-card overflow-hidden h-full flex flex-col p-1.5">
+                <Skeleton className="aspect-[3/4] w-full rounded-md bg-muted/50" />
+                <div className="p-4 flex-grow">
+                  <Skeleton className="h-6 w-3/4 mb-2 bg-muted/50" />
+                  <Skeleton className="h-4 w-full mb-3 bg-muted/50" />
+                  <Skeleton className="h-4 w-2/3 mb-3 bg-muted/50" />
+                </div>
+                <div className="p-4 pt-0">
+                  <Skeleton className="h-6 w-1/3 rounded-full bg-muted/50" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section id="produtos" className="py-16 lg:py-24 bg-background">
+        <div className="container mx-auto px-4 text-center">
+           <h2 className="font-headline text-4xl md:text-5xl font-bold text-center mb-4 text-destructive">
+              Ocorreu um Erro
+            </h2>
+          <div className="flex flex-col items-center justify-center bg-destructive/10 p-8 rounded-lg">
+            <AlertTriangle className="w-16 h-16 text-destructive mb-4" />
+            <p className="text-lg text-destructive">{error}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="produtos" className="py-16 lg:py-24 bg-background">
@@ -43,14 +125,14 @@ export function ProductShowcaseSection() {
         >
           <AnimatePresence>
             {filteredProducts.map((product, index) => (
-               <ScrollReveal key={product.id} delay={index * 0.1}>
+               <ScrollReveal key={product.id} delay={index * 0.05}>
                  <ProductCard product={product} />
                </ScrollReveal>
             ))}
           </AnimatePresence>
         </m.div>
 
-        {filteredProducts.length === 0 && (
+        {filteredProducts.length === 0 && !isLoading && (
           <m.p 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
