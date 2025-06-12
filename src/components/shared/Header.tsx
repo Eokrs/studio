@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -39,7 +40,7 @@ export function Header() {
               key={item.id}
               variant="ghost"
               onClick={() => scrollToSection(item.id)}
-              className="text-foreground hover:text-primary transition-colors"
+              className="text-foreground hover:text-accent-foreground transition-colors"
             >
               {item.label}
             </Button>
