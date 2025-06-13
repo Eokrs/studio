@@ -35,7 +35,7 @@ export function AboutSection() {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center md:text-left">
             <ScrollReveal>
-              <Skeleton className="h-12 w-3/4 mb-6 bg-muted/50 mx-auto md:mx-0" />
+              <Skeleton className="h-12 w-3/4 mb-6 bg-muted/50 mx-auto" />
               <Skeleton className="h-5 w-full mb-4 bg-muted/50" />
               <Skeleton className="h-5 w-full mb-4 bg-muted/50" />
               <Skeleton className="h-5 w-5/6 mb-4 bg-muted/50 mx-auto md:mx-0" />
@@ -71,7 +71,7 @@ export function AboutSection() {
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center md:text-left">
           <ScrollReveal>
-            <h2 className="font-headline text-4xl md:text-5xl font-bold mb-6 text-foreground">
+            <h2 className="font-headline text-4xl md:text-5xl font-bold mb-6 text-foreground text-center">
               {content.title}
             </h2>
             <p className="text-lg text-muted-foreground mb-4 leading-relaxed">
