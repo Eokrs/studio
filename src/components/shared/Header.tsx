@@ -111,7 +111,7 @@ export function Header() {
               key={item.id}
               variant="ghost"
               onClick={() => scrollToSection(item.id)}
-              className="text-foreground hover:text-accent-foreground transition-colors px-3 py-2"
+              className="text-foreground px-3 py-2 rounded-md transition-all duration-300 hover:text-accent-foreground hover:bg-card/30 dark:hover:bg-card/20 hover:backdrop-blur-md hover:border hover:border-white/20 dark:hover:border-white/10 hover:shadow-lg"
             >
               {item.label}
             </Button>
