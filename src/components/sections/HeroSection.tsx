@@ -29,7 +29,7 @@ export function HeroSection() {
         <ScrollReveal delay={0.2}>
           <h1 className="font-headline text-5xl md:text-7xl font-bold mb-6">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary">
-              Vidro Showcase
+              Nuvyra Store
             </span>
           </h1>
         </ScrollReveal>

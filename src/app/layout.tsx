@@ -6,9 +6,9 @@ import { Footer } from '@/components/shared/Footer';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'Vidro Showcase - Modern Product Showcase',
+  title: 'Nuvyra Store - Modern Product Showcase',
   description: 'Explore our curated collection of products in a stunning glassmorphism interface.',
-  keywords: ['product showcase', 'glassmorphism', 'modern design', 'vidro showcase'],
+  keywords: ['product showcase', 'glassmorphism', 'modern design', 'nuvyra store'],
 };
 
 export default function RootLayout({
