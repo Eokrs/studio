@@ -9,7 +9,10 @@ import { CategoryFilters } from '@/components/products/CategoryFilters';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { getProducts, getCategories } from '@/app/actions/productActions';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle, Loader2 } from 'lucide-react';
+
+const PRODUCTS_PER_PAGE = 20;
 
 export function ProductShowcaseSection() {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
@@ -17,6 +20,7 @@ export function ProductShowcaseSection() {
   const [productCategories, setProductCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [displayedProductsCount, setDisplayedProductsCount] = useState(PRODUCTS_PER_PAGE);
 
   useEffect(() => {
     async function fetchData() {
@@ -33,7 +37,7 @@ export function ProductShowcaseSection() {
         console.error("Failed to fetch product data:", err);
         let errorMessage = "Falha ao carregar os produtos. Por favor, tente novamente mais tarde.";
         if (err instanceof Error) {
-            errorMessage = err.message; // Use the specific error from Supabase if available
+            errorMessage = err.message;
         }
         setError(errorMessage);
       } finally {
@@ -49,6 +53,23 @@ export function ProductShowcaseSection() {
     }
     return allProducts.filter(product => product.category === selectedCategory);
   }, [selectedCategory, allProducts]);
+
+  const productsToDisplay = useMemo(() => {
+    return filteredProducts.slice(0, displayedProductsCount);
+  }, [filteredProducts, displayedProductsCount]);
+
+  const hasMoreProducts = useMemo(() => {
+    return displayedProductsCount < filteredProducts.length;
+  }, [displayedProductsCount, filteredProducts.length]);
+
+  const handleLoadMore = () => {
+    setDisplayedProductsCount(prevCount => prevCount + PRODUCTS_PER_PAGE);
+  };
+
+  useEffect(() => {
+    // Reset displayed count when category changes
+    setDisplayedProductsCount(PRODUCTS_PER_PAGE);
+  }, [selectedCategory]);
 
   if (isLoading) {
     return (
@@ -68,7 +89,7 @@ export function ProductShowcaseSection() {
             ))}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
-            {Array.from({ length: 10 }).map((_, index) => (
+            {Array.from({ length: PRODUCTS_PER_PAGE }).map((_, index) => ( // Show skeletons for one page
               <div key={index} className="glass-card overflow-hidden h-full flex flex-col p-1.5">
                 <Skeleton className="aspect-square w-full rounded-md bg-muted/50" />
                 <div className="p-3 flex-grow">
@@ -128,8 +149,8 @@ export function ProductShowcaseSection() {
           className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6"
         >
           <AnimatePresence>
-            {filteredProducts.map((product, index) => (
-               <ScrollReveal key={product.id} delay={index * 0.05}>
+            {productsToDisplay.map((product, index) => (
+               <ScrollReveal key={product.id + '-' + index} delay={index < PRODUCTS_PER_PAGE ? index * 0.05 : 0}>
                  <ProductCard product={product} />
                </ScrollReveal>
             ))}
@@ -144,6 +165,20 @@ export function ProductShowcaseSection() {
           >
             Nenhum produto encontrado para esta categoria.
           </m.p>
+        )}
+
+        {hasMoreProducts && (
+          <ScrollReveal className="text-center mt-12">
+            <Button
+              onClick={handleLoadMore}
+              size="lg"
+              variant="outline"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-lg transition-all"
+            >
+              Carregar Mais Produtos
+              <Loader2 className="ml-2 h-5 w-5 animate-spin hidden" /> {/* For future loading state */}
+            </Button>
+          </ScrollReveal>
         )}
       </div>
     </section>
