@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -20,10 +21,10 @@ export function CategoryFilters({ categories, selectedCategory, onSelectCategory
           key={category}
           variant="ghost"
           onClick={() => onSelectCategory(category)}
-          className={`relative px-4 py-2 rounded-md transition-colors duration-200 
+          className={`relative px-4 py-2 rounded-md transition-all duration-300 
                       ${selectedCategory === category 
                         ? 'text-primary-foreground' 
-                        : 'text-muted-foreground hover:text-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-card/30 dark:hover:bg-card/20 hover:backdrop-blur-md hover:border hover:border-white/20 dark:hover:border-white/10 hover:shadow-lg'
                       }
                       focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
         >
