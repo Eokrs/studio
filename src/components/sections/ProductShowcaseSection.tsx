@@ -172,8 +172,8 @@ export function ProductShowcaseSection() {
             <Button
               onClick={handleLoadMore}
               size="lg"
-              variant="outline"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-lg transition-all"
+              variant="outline" // Variant is outline, but className below makes it look like primary
+              className="bg-primary text-primary-foreground shadow-md transition-all duration-300 hover:bg-primary/60 dark:hover:bg-primary/40 hover:backdrop-blur-md hover:shadow-lg hover:border hover:border-primary/30 dark:hover:border-primary/20"
             >
               Carregar Mais Produtos
               <Loader2 className="ml-2 h-5 w-5 animate-spin hidden" /> {/* For future loading state */}

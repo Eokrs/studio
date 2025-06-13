@@ -1,3 +1,4 @@
+
 "use client";
 
 import { motion } from 'framer-motion';
@@ -41,7 +42,7 @@ export function HeroSection() {
           <Button
             size="lg"
             onClick={scrollToProducts}
-            className="group bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-lg transition-all duration-300 hover:shadow-primary/40 transform hover:scale-105"
+            className="group bg-primary text-primary-foreground rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 hover:bg-primary/60 dark:hover:bg-primary/40 hover:backdrop-blur-md hover:border hover:border-primary/30 dark:hover:border-primary/20"
             aria-label="Rolar para produtos"
           >
             Explorar Produtos
