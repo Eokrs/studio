@@ -5,10 +5,14 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl) {
-  throw new Error("Missing env.NEXT_PUBLIC_SUPABASE_URL");
+  const errorMsg = "CRITICAL: Missing NEXT_PUBLIC_SUPABASE_URL environment variable. Ensure it is set in your deployment environment (e.g., Netlify site settings under Build & deploy > Environment).";
+  console.error(errorMsg);
+  throw new Error(errorMsg);
 }
 if (!supabaseAnonKey) {
-  throw new Error("Missing env.NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  const errorMsg = "CRITICAL: Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable. Ensure it is set in your deployment environment (e.g., Netlify site settings under Build & deploy > Environment).";
+  console.error(errorMsg);
+  throw new Error(errorMsg);
 }
 
 // Type definition for your database schema (optional but recommended)
@@ -61,3 +65,4 @@ export const supabase: SupabaseClient<Database> = createClient<Database>(
   supabaseUrl,
   supabaseAnonKey
 );
+

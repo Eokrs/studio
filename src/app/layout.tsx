@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   title: 'Nuvyra Store - Modern Product Showcase',
   description: 'Explore our curated collection of products in a stunning glassmorphism interface.',
   keywords: ['product showcase', 'glassmorphism', 'modern design', 'nuvyra store'],
+  icons: null, // Explicitly state no icons are provided via metadata
 };
 
 export default function RootLayout({
