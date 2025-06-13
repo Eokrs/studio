@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { getAboutContent, type AboutContent } from '@/app/actions/contentActions';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,19 +33,14 @@ export function AboutSection() {
     return (
       <section id="sobre" className="py-16 lg:py-24 bg-secondary/30 dark:bg-secondary/20">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <ScrollReveal className="md:order-2">
-              <div className="relative aspect-square max-w-md mx-auto glass-card p-2">
-                <Skeleton className="w-full h-full min-h-[300px] md:min-h-[400px] rounded-lg bg-muted/50" />
-              </div>
-            </ScrollReveal>
-            <ScrollReveal className="md:order-1">
-              <Skeleton className="h-12 w-3/4 mb-6 bg-muted/50" />
+          <div className="max-w-3xl mx-auto text-center md:text-left">
+            <ScrollReveal>
+              <Skeleton className="h-12 w-3/4 mb-6 bg-muted/50 mx-auto md:mx-0" />
               <Skeleton className="h-5 w-full mb-4 bg-muted/50" />
               <Skeleton className="h-5 w-full mb-4 bg-muted/50" />
-              <Skeleton className="h-5 w-5/6 mb-4 bg-muted/50" />
+              <Skeleton className="h-5 w-5/6 mb-4 bg-muted/50 mx-auto md:mx-0" />
               <Skeleton className="h-5 w-full mb-4 bg-muted/50" />
-              <Skeleton className="h-5 w-4/6 bg-muted/50" />
+              <Skeleton className="h-5 w-4/6 bg-muted/50 mx-auto md:mx-0" />
             </ScrollReveal>
           </div>
         </div>
@@ -75,19 +69,8 @@ export function AboutSection() {
   return (
     <section id="sobre" className="py-16 lg:py-24 bg-secondary/30 dark:bg-secondary/20">
       <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <ScrollReveal className="md:order-2">
-            <div className="relative aspect-square max-w-md mx-auto glass-card p-2">
-              <Image
-                src={content.imageUrl}
-                alt={content.imageAlt}
-                width={600}
-                height={600}
-                className="rounded-lg object-cover"
-              />
-            </div>
-          </ScrollReveal>
-          <ScrollReveal className="md:order-1">
+        <div className="max-w-3xl mx-auto text-center md:text-left">
+          <ScrollReveal>
             <h2 className="font-headline text-4xl md:text-5xl font-bold mb-6 text-foreground">
               {content.title}
             </h2>
