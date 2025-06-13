@@ -9,7 +9,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Gem, Search as SearchIcon } from 'lucide-react';
+import { Search as SearchIcon } from 'lucide-react'; // Removed Gem import
 import { searchProductsByName } from '@/app/actions/productActions';
 import type { Product } from '@/data/products';
 
@@ -101,7 +101,7 @@ export function Header() {
     >
       <div className="container mx-auto flex items-center justify-between max-w-7xl gap-4">
         <Link href="/" className="flex items-center gap-2 flex-shrink-0" aria-label="Nuvyra Store Home">
-          <Gem className="h-7 w-7 text-primary" />
+          {/* <Gem className="h-7 w-7 text-primary" /> Removed Gem icon */}
           <h1 className="text-xl font-headline font-bold text-foreground">Nuvyra Store</h1>
         </Link>
         
