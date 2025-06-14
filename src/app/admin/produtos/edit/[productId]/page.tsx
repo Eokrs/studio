@@ -20,7 +20,7 @@ import Image from 'next/image';
 
 const productFormSchema = z.object({
   name: z.string().min(3, { message: 'O nome deve ter pelo menos 3 caracteres.' }).max(100, { message: 'O nome não pode exceder 100 caracteres.' }),
-  description: z.string().min(10, { message: 'A descrição deve ter pelo menos 10 caracteres.' }).max(1000, { message: 'A descrição não pode exceder 1000 caracteres.' }),
+  description: z.string().max(1000, { message: 'A descrição não pode exceder 1000 caracteres.' }), // Removido .min(10)
   image: z.string().url({ message: 'Por favor, insira uma URL de imagem válida.' }).or(z.literal('')).optional(),
   category: z.string().min(2, { message: 'A categoria deve ter pelo menos 2 caracteres.' }).max(50, { message: 'A categoria não pode exceder 50 caracteres.' }),
   is_active: z.boolean().default(true),
@@ -286,3 +286,5 @@ export default function EditProductPage() {
     </div>
   );
 }
+
+    
