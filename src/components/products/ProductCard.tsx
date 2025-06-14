@@ -17,9 +17,6 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart(); // Get addToCart function from context
 
-  const whatsAppMessage = `Olá, gostaria de saber mais sobre o tênis ${product.name}.`;
-  const whatsAppUrl = `https://wa.me/5522999586820?text=${encodeURIComponent(whatsAppMessage)}`;
-
   return (
     <m.div
       layout
@@ -43,7 +40,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <CardTitle className="font-headline text-lg mb-1 text-foreground">{product.name}</CardTitle>
         <CardDescription className="text-xs text-muted-foreground mb-2">{product.description}</CardDescription>
       </CardContent>
-      <CardFooter className="p-3 pt-2 flex flex-col items-start w-full space-y-2"> {/* Added space-y-2 */}
+      <CardFooter className="p-3 pt-2 flex flex-col items-start w-full space-y-2">
         <Badge variant="secondary" className="bg-accent/20 text-accent-foreground border-accent/30 text-xs">
           {product.category}
         </Badge>
@@ -58,19 +55,6 @@ export function ProductCard({ product }: ProductCardProps) {
         >
           <ShoppingCartIcon className="mr-2 h-4 w-4" />
           Adicionar ao Carrinho
-        </Button>
-        <Button
-          asChild
-          className="w-full text-white font-semibold rounded-md transition-all duration-300 shadow-lg backdrop-blur-md border border-white/20 dark:border-white/10 bg-[#25D366]/[0.6] hover:bg-[#25D366]/[0.75] dark:bg-[#25D366]/[0.4] dark:hover:bg-[#25D366]/[0.55] hover:shadow-xl"
-        >
-          <a
-            href={whatsAppUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Adquirir o produto ${product.name} via WhatsApp`}
-          >
-            Adquirir Agora
-          </a>
         </Button>
       </CardFooter>
     </m.div>
