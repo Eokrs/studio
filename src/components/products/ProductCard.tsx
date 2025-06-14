@@ -6,12 +6,16 @@ import { m } from 'framer-motion';
 import type { Product } from '@/data/products';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button'; // Importar o componente Button
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const whatsAppMessage = `Olá, gostaria de saber mais sobre o tênis ${product.name}.`;
+  const whatsAppUrl = `https://wa.me/5522999586820?text=${encodeURIComponent(whatsAppMessage)}`;
+
   return (
     <m.div
       layout
@@ -35,10 +39,23 @@ export function ProductCard({ product }: ProductCardProps) {
         <CardTitle className="font-headline text-lg mb-1 text-foreground">{product.name}</CardTitle>
         <CardDescription className="text-xs text-muted-foreground mb-2">{product.description}</CardDescription>
       </CardContent>
-      <CardFooter className="p-3 pt-0">
-        <Badge variant="secondary" className="bg-accent/20 text-accent-foreground border-accent/30 text-xs">
+      <CardFooter className="p-3 pt-2 flex flex-col items-start w-full"> {/* Alterado para flex-col e items-start */}
+        <Badge variant="secondary" className="bg-accent/20 text-accent-foreground border-accent/30 text-xs mb-3">
           {product.category}
         </Badge>
+        <Button
+          asChild
+          className="w-full bg-[#25D366] hover:bg-[#1EA052] text-white font-semibold rounded-md transition-colors duration-300 shadow-md"
+        >
+          <a
+            href={whatsAppUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Adquirir o produto ${product.name} via WhatsApp`}
+          >
+            Adquirir Agora
+          </a>
+        </Button>
       </CardFooter>
     </m.div>
   );
