@@ -41,13 +41,12 @@ export default function AdminProdutosPage() {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const { toast } = useToast();
-  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   const fetchProducts = useCallback(async (loadMore = false) => {
     if (!loadMore) {
       setIsLoading(true);
-      setProducts([]);
-      setOffset(0);
+      setProducts([]); // Reset products only if it's not loading more
+      setOffset(0);     // Reset offset only if it's not loading more
     } else {
       setIsLoadingMore(true);
     }
@@ -70,7 +69,6 @@ export default function AdminProdutosPage() {
       console.error("Failed to fetch products for admin:", err);
       const errorMessage = err.message || "Falha ao carregar os produtos. Tente novamente mais tarde.";
       setError(errorMessage);
-      // Toast is shown from initial load attempt if it fails
       if (!loadMore) {
         toast({
           title: "Erro ao Carregar Produtos",
@@ -82,11 +80,12 @@ export default function AdminProdutosPage() {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [toast, offset]);
+  }, [toast, offset]); // offset dependency is important for loadMore
 
   useEffect(() => {
     fetchProducts();
-  }, []); // Fetch on initial mount only once by fetchProducts itself
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // fetchProducts is memoized, so this will run once on mount.
 
   const handleLoadMore = () => {
     if (hasMore && !isLoadingMore) {
@@ -94,15 +93,13 @@ export default function AdminProdutosPage() {
     }
   };
 
-  const handleDeleteProduct = async () => {
-    if (!productToDelete) return;
-
-    const result = await deleteProduct(productToDelete.id);
+  const handleConfirmDelete = async (productId: string, productName: string) => {
+    const result = await deleteProduct(productId);
     if (result.success) {
-      setProducts(prevProducts => prevProducts.filter(p => p.id !== productToDelete.id));
+      setProducts(prevProducts => prevProducts.filter(p => p.id !== productId));
       toast({
         title: "Produto Excluído",
-        description: `O produto "${productToDelete.name}" foi excluído com sucesso.`,
+        description: `O produto "${productName}" foi excluído com sucesso.`,
         variant: "default",
       });
     } else {
@@ -112,7 +109,6 @@ export default function AdminProdutosPage() {
         variant: "destructive",
       });
     }
-    setProductToDelete(null); // Close dialog
   };
 
   const AdminPageHeader = () => (
@@ -161,7 +157,6 @@ export default function AdminProdutosPage() {
         </div>
       ))
   );
-
 
   if (isLoading && products.length === 0) {
     return (
@@ -245,16 +240,34 @@ export default function AdminProdutosPage() {
                               <Edit3 className="mr-1 h-3.5 w-3.5" /> Editar
                             </Link>
                           </Button>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => setProductToDelete(product)}
-                                className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 text-xs px-2 h-8"
-                            >
-                                <Trash2 className="mr-1 h-3.5 w-3.5" /> Excluir
-                            </Button>
-                          </AlertDialogTrigger>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 text-xs px-2 h-8"
+                              >
+                                  <Trash2 className="mr-1 h-3.5 w-3.5" /> Excluir
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja excluir o produto "{product.name}"? Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleConfirmDelete(product.id, product.name)} 
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -281,22 +294,6 @@ export default function AdminProdutosPage() {
           )}
         </>
       )}
-      <AlertDialog open={!!productToDelete} onOpenChange={(isOpen) => !isOpen && setProductToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir o produto "{productToDelete?.name}"? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setProductToDelete(null)}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteProduct} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
