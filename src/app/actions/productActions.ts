@@ -9,18 +9,19 @@
  * - deleteProduct - Deletes a product by its ID.
  * - updateProduct - Updates an existing product.
  */
-import { supabase } from '@/lib/supabase';
-import type { Product, ProductUpdateData } from '@/data/products'; // Product interface and ProductUpdateData
+import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import type { Database } from '@/lib/supabase';
+import type { Product, ProductUpdateData } from '@/data/products';
 import { revalidatePath } from 'next/cache';
 
 export async function getProducts(options?: { limit?: number; offset?: number }): Promise<Product[]> {
-  // 'use server'; // Removed from here
+  const supabase = createServerActionClient<Database>({ cookies });
   const { limit = 20, offset = 0 } = options || {};
 
   let query = supabase
     .from('products')
-    .select('id, name, description, image, category, created_at, is_active') // Explicitly list columns
-    // .eq('is_active', true) // No admin, queremos ver todos, ativos ou inativos
+    .select('id, name, description, image, category, created_at, is_active')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -42,7 +43,7 @@ export async function getProducts(options?: { limit?: number; offset?: number })
 }
 
 export async function getProductById(productId: string): Promise<Product | null> {
-  // 'use server'; // Removed from here
+  const supabase = createServerActionClient<Database>({ cookies });
   if (!productId) {
     console.error('Get product by ID error: productId is undefined or null');
     return null;
@@ -55,18 +56,18 @@ export async function getProductById(productId: string): Promise<Product | null>
 
   if (error) {
     console.error(`Supabase error fetching product with ID ${productId}:`, error);
-    return null; // Return null if product not found or error occurs
+    return null;
   }
   return data as Product | null;
 }
 
 
 export async function getCategories(): Promise<string[]> {
-  // 'use server'; // Removed from here
+  const supabase = createServerActionClient<Database>({ cookies });
   const { data, error } = await supabase
     .from('products')
     .select('category')
-    .eq('is_active', true);
+    .eq('is_active', true); // Assuming categories should only be from active products
 
   if (error) {
     console.error('Supabase error fetching categories:', error);
@@ -82,14 +83,14 @@ export async function getCategories(): Promise<string[]> {
 }
 
 export async function searchProductsByName(query: string): Promise<Product[]> {
-  // 'use server'; // Removed from here
+  const supabase = createServerActionClient<Database>({ cookies });
   if (!query || query.trim() === "") {
     return [];
   }
 
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, description, image, category')
+    .select('id, name, description, image, category, is_active, created_at') // Added is_active and created_at for consistency
     .ilike('name', `%${query}%`)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
@@ -103,7 +104,12 @@ export async function searchProductsByName(query: string): Promise<Product[]> {
 }
 
 export async function deleteProduct(productId: string): Promise<{ success: boolean; message?: string }> {
-  // 'use server'; // Removed from here
+  const supabase = createServerActionClient<Database>({ cookies });
+   const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, message: "Ação não autorizada. Usuário não autenticado." };
+  }
+
   if (!productId) {
     return { success: false, message: "ID do produto não fornecido." };
   }
@@ -115,7 +121,7 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
 
   if (error) {
     console.error('Supabase error deleting product:', error);
-    return { success: false, message: `Erro ao excluir produto: ${error.message}. Verifique os logs do servidor.` };
+    return { success: false, message: `Erro ao excluir produto: ${error.message}. Verifique os logs do servidor e as políticas RLS.` };
   }
 
   revalidatePath('/admin/produtos');
@@ -124,12 +130,16 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
 }
 
 export async function updateProduct(productId: string, productData: ProductUpdateData): Promise<{ success: boolean; message?: string; product?: Product }> {
-  // 'use server'; // Removed from here
+  const supabase = createServerActionClient<Database>({ cookies });
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, message: "Ação não autorizada. Usuário não autenticado." };
+  }
+
   if (!productId) {
     return { success: false, message: "ID do produto não fornecido." };
   }
 
-  // Ensure no undefined values are sent to Supabase, as it might clear fields
   const updateData = Object.fromEntries(
     Object.entries(productData).filter(([_, v]) => v !== undefined)
   );
@@ -147,14 +157,12 @@ export async function updateProduct(productId: string, productData: ProductUpdat
 
   if (error) {
     console.error('Supabase error updating product:', error);
-    return { success: false, message: `Erro ao atualizar produto: ${error.message}. Verifique os logs do servidor.` };
+    return { success: false, message: `Erro ao atualizar produto: ${error.message}. Verifique os logs do servidor e as políticas RLS.` };
   }
 
   revalidatePath('/admin/produtos');
   revalidatePath(`/admin/produtos/edit/${productId}`);
   revalidatePath('/'); 
-  // Potentially revalidate specific product public page if you have one:
-  // revalidatePath(`/produtos/${productId}`);
 
   return { success: true, message: "Produto atualizado com sucesso.", product: data as Product };
 }

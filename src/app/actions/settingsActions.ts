@@ -8,7 +8,9 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { supabase } from '@/lib/supabase';
+import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import type { Database } from '@/lib/supabase'; // Import Database type from lib/supabase
 import type { SiteSettings } from '@/types/settings';
 import { SiteSettingsSchema } from '@/types/settings';
 
@@ -24,10 +26,12 @@ const defaultSettings: SiteSettings = {
 // allow 'authenticated' users to 'INSERT' and 'UPDATE' the row with id=1,
 // and 'anon' users to 'SELECT' it. Disabling RLS entirely is generally not recommended
 // for security reasons, as it might expose write operations to unintended roles if table GRANTS are too permissive.
-// Refer to Supabase documentation and the RLS policies suggested previously for configuring RLS.
+// If RLS is enabled and writes are failing, ensure your server actions are using an auth-aware Supabase client
+// (e.g., createServerActionClient) so policies for the 'authenticated' role apply correctly.
 const SETTINGS_ROW_ID = 1; // The ID for the single row of settings
 
 export async function getSiteSettings(): Promise<SiteSettings> {
+  const supabase = createServerActionClient<Database>({ cookies });
   const { data, error } = await supabase
     .from('site_settings')
     .select('site_name, default_seo_title, default_seo_description, seo_keywords')
@@ -58,6 +62,13 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 }
 
 export async function updateSiteSettings(newSettings: SiteSettings): Promise<{ success: boolean; message: string; settings?: SiteSettings }> {
+  const supabase = createServerActionClient<Database>({ cookies });
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, message: "Ação não autorizada. Usuário não autenticado." };
+  }
+
   try {
     const validatedSettings = SiteSettingsSchema.parse(newSettings);
 
@@ -81,9 +92,8 @@ export async function updateSiteSettings(newSettings: SiteSettings): Promise<{ s
 
     if (error) {
       console.error('Supabase error updating site settings:', error);
-      // Provide more specific advice if it's an RLS violation
       if (error.message.includes('violates row-level security policy') || error.message.includes('RLS')) {
-        return { success: false, message: `Erro ao salvar configurações: Violação da política de segurança a nível de linha (RLS) do banco de dados. Certifique-se de que as políticas RLS para a tabela 'site_settings' permitem que usuários autenticados (admin) insiram/atualizem a linha com id=${SETTINGS_ROW_ID}. Detalhe: ${error.message}` };
+        return { success: false, message: `Erro ao salvar configurações: Violação da política de segurança a nível de linha (RLS) do banco de dados. Certifique-se de que as políticas RLS para a tabela 'site_settings' permitem que usuários autenticados (admin) insiram/atualizem a linha com id=${SETTINGS_ROW_ID}, e que o client Supabase no server action está ciente da sessão autenticada. Detalhe: ${error.message}` };
       }
       return { success: false, message: `Erro ao salvar configurações no banco de dados: ${error.message}` };
     }
