@@ -5,12 +5,12 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl) {
-  const errorMsg = "CRITICAL: Missing NEXT_PUBLIC_SUPABASE_URL environment variable. Ensure it is set in your deployment environment (e.g., Netlify site settings under Build & deploy > Environment) or .env.local file. The application cannot connect to Supabase without it.";
+  const errorMsg = "CRITICAL_ERROR: Missing NEXT_PUBLIC_SUPABASE_URL environment variable. \nACTION: Ensure it's set in your .env.local file (for local development) or in your deployment environment settings (e.g., Netlify Build & deploy > Environment). \nThe application cannot connect to Supabase without it. \nDETAILS: Check your server logs for this exact 'CRITICAL_ERROR' message.";
   console.error(errorMsg);
   throw new Error(errorMsg);
 }
 if (!supabaseAnonKey) {
-  const errorMsg = "CRITICAL: Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable. Ensure it is set in your deployment environment (e.g., Netlify site settings under Build & deploy > Environment) or .env.local file. The application cannot connect to Supabase without it.";
+  const errorMsg = "CRITICAL_ERROR: Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable. \nACTION: Ensure it's set in your .env.local file (for local development) or in your deployment environment settings (e.g., Netlify Build & deploy > Environment). \nThe application cannot connect to Supabase without it. \nDETAILS: Check your server logs for this exact 'CRITICAL_ERROR' message.";
   console.error(errorMsg);
   throw new Error(errorMsg);
 }
@@ -29,7 +29,7 @@ export interface Database {
           image: string;
           category: string;
           is_active: boolean;
-          created_at: string; 
+          created_at: string;
         };
         Insert: { // The data expected to insert a new row
           id?: string; // Usually auto-generated
@@ -66,10 +66,10 @@ try {
   // Non-null assertions are safe here due to the checks above
   supabaseInstance = createClient<Database>(supabaseUrl!, supabaseAnonKey!);
 } catch (e: any) {
-  const errorMsg = `CRITICAL: Supabase client initialization failed unexpectedly. 
-This could be due to severely malformed Supabase URL/key, an internal issue within the Supabase client library, or a networking problem from the server. 
-Please double-check your NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables. 
-Error Details: ${e.message}`;
+  const errorMsg = `CRITICAL_ERROR: Supabase client initialization failed unexpectedly.
+This could be due to severely malformed Supabase URL/key, an internal issue within the Supabase client library, or a networking problem.
+ACTION: Please double-check your NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables for correctness (no typos, extra spaces, or incorrect values).
+DETAILS: Check your server logs for this exact 'CRITICAL_ERROR' message. Specific error from Supabase library: ${e.message}`;
   console.error(errorMsg, e);
   throw new Error(errorMsg);
 }
