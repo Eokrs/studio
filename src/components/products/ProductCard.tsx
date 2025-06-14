@@ -45,7 +45,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </Badge>
         <Button
           asChild
-          className="w-full bg-[#25D366] hover:bg-[#1EA052] text-white font-semibold rounded-md transition-colors duration-300 shadow-md"
+          className="w-full text-white font-semibold rounded-md transition-all duration-300 shadow-lg backdrop-blur-md border border-white/20 dark:border-white/10 bg-[#25D366]/[0.6] hover:bg-[#25D366]/[0.75] dark:bg-[#25D366]/[0.4] dark:hover:bg-[#25D366]/[0.55] hover:shadow-xl"
         >
           <a
             href={whatsAppUrl}
