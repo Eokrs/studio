@@ -2,7 +2,13 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { useForm, type SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
@@ -10,17 +16,115 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { ArrowLeft, Settings, Image as ImageIcon, ExternalLink, ShieldCheck, Construction, Info } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { getSiteSettings, updateSiteSettings, SiteSettingsSchema, type SiteSettings } from '@/app/actions/settingsActions';
+import { ArrowLeft, Settings, Image as ImageIcon, ExternalLink, ShieldCheck, Construction, Info, Save, Loader2, AlertTriangle } from 'lucide-react';
+
+type SiteSettingsFormValues = SiteSettings & { seoKeywordsString: string };
 
 export default function AdminConfiguracoesPage() {
-  const settingCategories = [
-    {
-      title: 'Configurações do Site',
-      description: 'Ajuste informações globais como nome da loja, meta tags para SEO (título, descrição), e talvez o logo principal.',
-      icon: Settings,
-      status: 'Em breve',
-      details: 'Permitirá editar o título padrão do site, descrição para mecanismos de busca e palavras-chave.',
+  const { toast } = useToast();
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [initialLoadError, setInitialLoadError] = useState<string | null>(null);
+
+  const form = useForm<SiteSettingsFormValues>({
+    resolver: zodResolver(SiteSettingsSchema.extend({
+      seoKeywordsString: z.string().min(1, 'Forneça ao menos uma palavra-chave.')
+        .transform(val => val.split(',').map(k => k.trim()).filter(k => k.length > 0))
+        .superRefine((val, ctx) => {
+          if (val.length === 0) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Forneça ao menos uma palavra-chave válida.",
+            });
+          }
+          val.forEach(keyword => {
+            if (keyword.length < 2) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: `Palavra-chave "${keyword}" é muito curta. Mínimo 2 caracteres.`,
+              });
+            }
+          });
+        })
+    }).omit({ seoKeywords: true })), // We handle seoKeywords through seoKeywordsString
+    defaultValues: {
+      siteName: '',
+      defaultSeoTitle: '',
+      defaultSeoDescription: '',
+      seoKeywordsString: '',
     },
+  });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      setIsLoadingSettings(true);
+      setInitialLoadError(null);
+      try {
+        const settings = await getSiteSettings();
+        form.reset({
+          siteName: settings.siteName,
+          defaultSeoTitle: settings.defaultSeoTitle,
+          defaultSeoDescription: settings.defaultSeoDescription,
+          seoKeywordsString: settings.seoKeywords.join(', '),
+        });
+      } catch (error) {
+        console.error("Failed to load site settings:", error);
+        const errorMessage = error instanceof Error ? error.message : "Falha ao carregar configurações.";
+        setInitialLoadError(errorMessage);
+        toast({ title: "Erro ao Carregar", description: errorMessage, variant: "destructive" });
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    };
+    fetchSettings();
+  }, [form, toast]);
+
+  const onSubmit: SubmitHandler<SiteSettingsFormValues> = async (data) => {
+    setIsSubmitting(true);
+    try {
+      // Transform seoKeywordsString back into an array for the action
+      const settingsToSave: SiteSettings = {
+        siteName: data.siteName,
+        defaultSeoTitle: data.defaultSeoTitle,
+        defaultSeoDescription: data.defaultSeoDescription,
+        seoKeywords: data.seoKeywordsString.split(',').map(k => k.trim()).filter(k => k.length > 0),
+      };
+      
+      const result = await updateSiteSettings(settingsToSave);
+      if (result.success && result.settings) {
+        toast({
+          title: "Sucesso!",
+          description: result.message,
+        });
+        // Optionally re-sync form if backend modified data (though not expected with mock)
+        form.reset({
+          siteName: result.settings.siteName,
+          defaultSeoTitle: result.settings.defaultSeoTitle,
+          defaultSeoDescription: result.settings.defaultSeoDescription,
+          seoKeywordsString: result.settings.seoKeywords.join(', '),
+        });
+      } else {
+        toast({
+          title: "Erro ao Salvar",
+          description: result.message || "Não foi possível salvar as configurações.",
+          variant: "destructive",
+        });
+      }
+    } catch (e: any) {
+      toast({
+        title: "Erro Inesperado",
+        description: e.message || "Ocorreu um erro durante a atualização.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const otherSettingCategories = [
     {
       title: 'Banner da Home Page',
       description: 'Faça upload e gerencie os banners promocionais exibidos na página inicial da sua loja.',
@@ -63,17 +167,108 @@ export default function AdminConfiguracoesPage() {
         </Button>
       </div>
 
-      <div className="glass-card p-6 md:p-8 rounded-xl shadow-xl mb-8">
-        <div className="mb-6 p-4 border border-amber-500/30 dark:border-amber-500/70 bg-amber-500/10 dark:bg-amber-500/20 rounded-md text-amber-700 dark:text-amber-400">
-          <Construction className="inline-block h-5 w-5 mr-2 align-middle" />
-          <strong className="font-semibold">Funcionalidade em Desenvolvimento:</strong> Esta seção de configurações está em construção.
-          A implementação de cada item abaixo requer lógica de backend específica para armazenar e aplicar as configurações de forma segura.
-          Os cards abaixo são representações conceituais de como as configurações poderão ser gerenciadas futuramente.
-        </div>
+      {/* Site Settings Form Card */}
+      <Card className="glass-card mb-8">
+        <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-3">
+          <div className="p-2 bg-primary/10 rounded-md">
+             <Settings className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <CardTitle className="text-xl font-semibold text-foreground font-headline">Configurações do Site</CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
+              Ajuste informações globais como nome da loja e meta tags para SEO.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoadingSettings ? (
+            <div className="space-y-6">
+              <Skeleton className="h-8 w-1/4 mb-1 bg-muted/50" />
+              <Skeleton className="h-10 w-full mb-4 bg-muted/50" />
+              <Skeleton className="h-8 w-1/4 mb-1 bg-muted/50" />
+              <Skeleton className="h-10 w-full mb-4 bg-muted/50" />
+              <Skeleton className="h-8 w-1/4 mb-1 bg-muted/50" />
+              <Skeleton className="h-20 w-full mb-4 bg-muted/50" />
+              <Skeleton className="h-8 w-1/4 mb-1 bg-muted/50" />
+              <Skeleton className="h-10 w-full mb-4 bg-muted/50" />
+              <Skeleton className="h-12 w-full bg-primary/50" />
+            </div>
+          ) : initialLoadError ? (
+             <div className="flex flex-col items-center justify-center text-center p-6 bg-destructive/10 rounded-md">
+                <AlertTriangle className="h-12 w-12 text-destructive mb-3" />
+                <p className="text-destructive font-medium">Erro ao carregar configurações:</p>
+                <p className="text-destructive/80 text-sm">{initialLoadError}</p>
+                <Button onClick={() => window.location.reload()} variant="outline" size="sm" className="mt-4">Tentar Novamente</Button>
+            </div>
+          ) : (
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div>
+                <Label htmlFor="siteName" className="text-foreground/80">Nome da Loja</Label>
+                <Input
+                  id="siteName"
+                  {...form.register('siteName')}
+                  className={`mt-1 bg-background/70 focus:bg-background ${form.formState.errors.siteName ? 'border-destructive ring-destructive' : ''}`}
+                  placeholder="Ex: Minha Loja Incrível"
+                />
+                {form.formState.errors.siteName && <p className="mt-1 text-xs text-destructive">{form.formState.errors.siteName.message}</p>}
+              </div>
+
+              <div>
+                <Label htmlFor="defaultSeoTitle" className="text-foreground/80">Título SEO Padrão</Label>
+                <Input
+                  id="defaultSeoTitle"
+                  {...form.register('defaultSeoTitle')}
+                  className={`mt-1 bg-background/70 focus:bg-background ${form.formState.errors.defaultSeoTitle ? 'border-destructive ring-destructive' : ''}`}
+                  placeholder="Ex: Minha Loja - Produtos de Alta Qualidade"
+                />
+                {form.formState.errors.defaultSeoTitle && <p className="mt-1 text-xs text-destructive">{form.formState.errors.defaultSeoTitle.message}</p>}
+              </div>
+
+              <div>
+                <Label htmlFor="defaultSeoDescription" className="text-foreground/80">Descrição SEO Padrão</Label>
+                <Textarea
+                  id="defaultSeoDescription"
+                  {...form.register('defaultSeoDescription')}
+                  rows={3}
+                  className={`mt-1 bg-background/70 focus:bg-background ${form.formState.errors.defaultSeoDescription ? 'border-destructive ring-destructive' : ''}`}
+                  placeholder="Descreva sua loja e seus principais produtos para os mecanismos de busca."
+                />
+                {form.formState.errors.defaultSeoDescription && <p className="mt-1 text-xs text-destructive">{form.formState.errors.defaultSeoDescription.message}</p>}
+              </div>
+
+              <div>
+                <Label htmlFor="seoKeywordsString" className="text-foreground/80">Palavras-chave SEO</Label>
+                 <Input
+                  id="seoKeywordsString"
+                  {...form.register('seoKeywordsString')}
+                  className={`mt-1 bg-background/70 focus:bg-background ${form.formState.errors.seoKeywordsString ? 'border-destructive ring-destructive' : ''}`}
+                  placeholder="Ex: tênis, moda, qualidade, importados"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Separe as palavras-chave por vírgula.</p>
+                {form.formState.errors.seoKeywordsString && <p className="mt-1 text-xs text-destructive">{form.formState.errors.seoKeywordsString.message}</p>}
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/80 transition-all duration-300 shadow-md hover:shadow-lg" 
+                disabled={isSubmitting || isLoadingSettings}
+              >
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Salvar Configurações do Site
+              </Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Placeholder for other settings categories */}
+      <div className="mb-6 p-4 border border-amber-500/30 dark:border-amber-500/70 bg-amber-500/10 dark:bg-amber-500/20 rounded-md text-amber-700 dark:text-amber-400">
+        <Construction className="inline-block h-5 w-5 mr-2 align-middle" />
+        <strong className="font-semibold">Outras Configurações em Desenvolvimento:</strong> As seções abaixo são representações de funcionalidades futuras.
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {settingCategories.map((category) => (
+        {otherSettingCategories.map((category) => (
           <Card key={category.title} className="glass-card flex flex-col">
             <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-3">
               <div className="p-2 bg-primary/10 rounded-md">
