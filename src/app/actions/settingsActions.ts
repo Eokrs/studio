@@ -1,8 +1,7 @@
-
+'use server';
 /**
  * @fileOverview Server actions for managing site-wide settings from Supabase.
  *
- * - SiteSettings - Interface for site settings.
  * - getSiteSettings - Fetches current site settings from Supabase.
  * - updateSiteSettings - Updates site settings in Supabase.
  */
@@ -10,15 +9,8 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { supabase } from '@/lib/supabase'; // Import Supabase client
-
-export const SiteSettingsSchema = z.object({
-  siteName: z.string().min(3, 'O nome do site deve ter pelo menos 3 caracteres.').max(50, 'O nome do site não pode exceder 50 caracteres.'),
-  defaultSeoTitle: z.string().min(10, 'O título SEO deve ter pelo menos 10 caracteres.').max(70, 'O título SEO não pode exceder 70 caracteres.'),
-  defaultSeoDescription: z.string().min(20, 'A descrição SEO deve ter pelo menos 20 caracteres.').max(160, 'A descrição SEO não pode exceder 160 caracteres.'),
-  seoKeywords: z.array(z.string().min(2, 'Cada palavra-chave deve ter pelo menos 2 caracteres.')).min(1, 'Forneça ao menos uma palavra-chave.'),
-});
-
-export type SiteSettings = z.infer<typeof SiteSettingsSchema>;
+import type { SiteSettings } from '@/types/settings'; // Updated import
+import { SiteSettingsSchema } from '@/types/settings'; // Updated import
 
 // Default settings to be used if nothing is found in the database
 const defaultSettings: SiteSettings = {
@@ -31,7 +23,7 @@ const defaultSettings: SiteSettings = {
 const SETTINGS_ROW_ID = 1; // The ID for the single row of settings
 
 export async function getSiteSettings(): Promise<SiteSettings> {
-  'use server';
+  // 'use server'; // Removed from here
   const { data, error } = await supabase
     .from('site_settings')
     .select('site_name, default_seo_title, default_seo_description, seo_keywords')
@@ -65,7 +57,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 }
 
 export async function updateSiteSettings(newSettings: SiteSettings): Promise<{ success: boolean; message: string; settings?: SiteSettings }> {
-  'use server';
+  // 'use server'; // Removed from here
   try {
     const validatedSettings = SiteSettingsSchema.parse(newSettings);
 

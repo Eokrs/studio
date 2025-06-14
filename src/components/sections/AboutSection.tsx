@@ -1,9 +1,9 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
-import { getAboutContent, type AboutContent } from '@/app/actions/contentActions';
+import { getAboutContent } from '@/app/actions/contentActions';
+import type { AboutContent } from '@/types/content'; // Updated import
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle } from 'lucide-react';
 

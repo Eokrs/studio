@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -7,7 +6,8 @@ import Link from 'next/link';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { getProductById, updateProduct, type ProductUpdateData, type Product } from '@/app/actions/productActions';
+import { getProductById, updateProduct } from '@/app/actions/productActions';
+import type { Product, ProductUpdateData } from '@/data/products'; // Updated import
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,7 +20,7 @@ import Image from 'next/image';
 
 const productFormSchema = z.object({
   name: z.string().min(3, { message: 'O nome deve ter pelo menos 3 caracteres.' }).max(100, { message: 'O nome não pode exceder 100 caracteres.' }),
-  description: z.string().max(1000, { message: 'A descrição não pode exceder 1000 caracteres.' }), // Removido .min(10)
+  description: z.string().max(1000, { message: 'A descrição não pode exceder 1000 caracteres.' }).optional(), // Made optional and removed min
   image: z.string().url({ message: 'Por favor, insira uma URL de imagem válida.' }).or(z.literal('')).optional(),
   category: z.string().min(2, { message: 'A categoria deve ter pelo menos 2 caracteres.' }).max(50, { message: 'A categoria não pode exceder 50 caracteres.' }),
   is_active: z.boolean().default(true),
@@ -286,5 +286,3 @@ export default function EditProductPage() {
     </div>
   );
 }
-
-    

@@ -1,17 +1,10 @@
-
+'use server';
 /**
  * @fileOverview Server actions for fetching general page content.
  *
- * - AboutContent - Type for about section content.
  * - getAboutContent - Fetches content for the About Us section.
  */
-
-export interface AboutContent {
-  title: string;
-  paragraph1: string;
-  paragraph2: string;
-  paragraph3: string;
-}
+import type { AboutContent } from '@/types/content'; // Updated import
 
 // Mock data for About Section, simulating a database record
 const aboutData: AboutContent = {
@@ -23,7 +16,7 @@ const aboutData: AboutContent = {
 
 
 export async function getAboutContent(): Promise<AboutContent> {
-  'use server';
+  // 'use server'; // Removed from here
   // In a real scenario, this would fetch from a database
   await new Promise(resolve => setTimeout(resolve, 400)); // Simulate network delay
   return aboutData;

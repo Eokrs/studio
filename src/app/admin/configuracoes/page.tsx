@@ -1,10 +1,10 @@
-
 'use client';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod'; // Keep z here for extending the schema locally
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,7 +18,8 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { getSiteSettings, updateSiteSettings, SiteSettingsSchema, type SiteSettings } from '@/app/actions/settingsActions';
+import { getSiteSettings, updateSiteSettings } from '@/app/actions/settingsActions';
+import { SiteSettingsSchema, type SiteSettings } from '@/types/settings'; // Updated import
 import { ArrowLeft, Settings, Image as ImageIcon, ExternalLink, ShieldCheck, Construction, Info, Save, Loader2, AlertTriangle } from 'lucide-react';
 
 type SiteSettingsFormValues = SiteSettings & { seoKeywordsString: string };
@@ -29,27 +30,31 @@ export default function AdminConfiguracoesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialLoadError, setInitialLoadError] = useState<string | null>(null);
 
-  const form = useForm<SiteSettingsFormValues>({
-    resolver: zodResolver(SiteSettingsSchema.extend({
-      seoKeywordsString: z.string().min(1, 'Forneça ao menos uma palavra-chave.')
-        .transform(val => val.split(',').map(k => k.trim()).filter(k => k.length > 0))
-        .superRefine((val, ctx) => {
-          if (val.length === 0) {
+  // Extend the base SiteSettingsSchema for client-side form handling (seoKeywordsString)
+  const clientSideFormSchema = SiteSettingsSchema.extend({
+    seoKeywordsString: z.string().min(1, 'Forneça ao menos uma palavra-chave.')
+      .transform(val => val.split(',').map(k => k.trim()).filter(k => k.length > 0))
+      .superRefine((val, ctx) => {
+        if (val.length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Forneça ao menos uma palavra-chave válida.",
+          });
+        }
+        val.forEach(keyword => {
+          if (keyword.length < 2) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
-              message: "Forneça ao menos uma palavra-chave válida.",
+              message: `Palavra-chave "${keyword}" é muito curta. Mínimo 2 caracteres.`,
             });
           }
-          val.forEach(keyword => {
-            if (keyword.length < 2) {
-              ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: `Palavra-chave "${keyword}" é muito curta. Mínimo 2 caracteres.`,
-              });
-            }
-          });
-        })
-    }).omit({ seoKeywords: true })), // We handle seoKeywords through seoKeywordsString
+        });
+      })
+  }).omit({ seoKeywords: true }); // We handle seoKeywords through seoKeywordsString
+
+
+  const form = useForm<SiteSettingsFormValues>({
+    resolver: zodResolver(clientSideFormSchema),
     defaultValues: {
       siteName: '',
       defaultSeoTitle: '',

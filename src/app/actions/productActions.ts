@@ -1,4 +1,4 @@
-
+'use server';
 /**
  * @fileOverview Server actions for fetching and managing product data from Supabase.
  *
@@ -10,11 +10,11 @@
  * - updateProduct - Updates an existing product.
  */
 import { supabase } from '@/lib/supabase';
-import type { Product } from '@/data/products'; // Product interface
+import type { Product, ProductUpdateData } from '@/data/products'; // Product interface and ProductUpdateData
 import { revalidatePath } from 'next/cache';
 
 export async function getProducts(options?: { limit?: number; offset?: number }): Promise<Product[]> {
-  'use server';
+  // 'use server'; // Removed from here
   const { limit = 20, offset = 0 } = options || {};
 
   let query = supabase
@@ -42,7 +42,7 @@ export async function getProducts(options?: { limit?: number; offset?: number })
 }
 
 export async function getProductById(productId: string): Promise<Product | null> {
-  'use server';
+  // 'use server'; // Removed from here
   if (!productId) {
     console.error('Get product by ID error: productId is undefined or null');
     return null;
@@ -62,7 +62,7 @@ export async function getProductById(productId: string): Promise<Product | null>
 
 
 export async function getCategories(): Promise<string[]> {
-  'use server';
+  // 'use server'; // Removed from here
   const { data, error } = await supabase
     .from('products')
     .select('category')
@@ -82,7 +82,7 @@ export async function getCategories(): Promise<string[]> {
 }
 
 export async function searchProductsByName(query: string): Promise<Product[]> {
-  'use server';
+  // 'use server'; // Removed from here
   if (!query || query.trim() === "") {
     return [];
   }
@@ -103,7 +103,7 @@ export async function searchProductsByName(query: string): Promise<Product[]> {
 }
 
 export async function deleteProduct(productId: string): Promise<{ success: boolean; message?: string }> {
-  'use server';
+  // 'use server'; // Removed from here
   if (!productId) {
     return { success: false, message: "ID do produto não fornecido." };
   }
@@ -123,16 +123,8 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
   return { success: true, message: "Produto excluído com sucesso." };
 }
 
-export interface ProductUpdateData {
-  name?: string;
-  description?: string;
-  image?: string;
-  category?: string;
-  is_active?: boolean;
-}
-
 export async function updateProduct(productId: string, productData: ProductUpdateData): Promise<{ success: boolean; message?: string; product?: Product }> {
-  'use server';
+  // 'use server'; // Removed from here
   if (!productId) {
     return { success: false, message: "ID do produto não fornecido." };
   }

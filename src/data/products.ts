@@ -9,6 +9,14 @@ export interface Product {
   created_at?: string; // Mantido opcional, geralmente gerenciado pelo DB
 }
 
+export interface ProductUpdateData {
+  name?: string;
+  description?: string;
+  image?: string;
+  category?: string;
+  is_active?: boolean;
+}
+
 // Mock data is no longer needed as it will come from Supabase.
 // The 'categories' array is now dynamically fetched by getCategories action.
 // The 'products' array is now dynamically fetched by getProducts action.
