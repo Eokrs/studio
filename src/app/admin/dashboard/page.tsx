@@ -49,7 +49,7 @@ export default function DashboardPage() {
     { title: "Métricas", description: "Analisar o desempenho e engajamento dos usuários.", icon: BarChart3, href: "/admin/metricas", isImplemented: true },
     // { title: "Gerenciar Conteúdo", description: "Editar textos e seções do site (Sobre, Contato).", icon: PencilLine, href: "/admin/conteudo", isImplemented: false },
     // { title: "Gerenciar Usuários", description: "Administrar usuários e permissões.", icon: Users, href: "/admin/usuarios", isImplemented: false },
-    { title: "Configurações", description: "Ajustar as configurações gerais do site e do painel.", icon: Settings, href: "/admin/configuracoes", isImplemented: false },
+    { title: "Configurações", description: "Ajustar as configurações gerais do site e do painel.", icon: Settings, href: "/admin/configuracoes", isImplemented: true },
   ];
 
   return (
