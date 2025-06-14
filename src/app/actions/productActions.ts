@@ -4,9 +4,11 @@
  * @fileOverview Server actions for fetching and managing product data from Supabase.
  *
  * - getProducts - Fetches products with optional pagination.
+ * - getProductById - Fetches a single product by its ID.
  * - getCategories - Fetches all unique active product categories.
  * - searchProductsByName - Fetches products matching a search query.
  * - deleteProduct - Deletes a product by its ID.
+ * - updateProduct - Updates an existing product.
  */
 import { supabase } from '@/lib/supabase';
 import type { Product } from '@/data/products'; // Product interface
@@ -18,7 +20,7 @@ export async function getProducts(options?: { limit?: number; offset?: number })
   let query = supabase
     .from('products')
     .select('id, name, description, image, category, created_at, is_active') // Explicitly list columns
-    .eq('is_active', true) // Example: Only active products for admin view too, adjust if needed
+    // .eq('is_active', true) // No admin, queremos ver todos, ativos ou inativos
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -38,6 +40,25 @@ export async function getProducts(options?: { limit?: number; offset?: number })
 
   return data as Product[] || [];
 }
+
+export async function getProductById(productId: string): Promise<Product | null> {
+  if (!productId) {
+    console.error('Get product by ID error: productId is undefined or null');
+    return null;
+  }
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, name, description, image, category, is_active, created_at')
+    .eq('id', productId)
+    .single();
+
+  if (error) {
+    console.error(`Supabase error fetching product with ID ${productId}:`, error);
+    return null; // Return null if product not found or error occurs
+  }
+  return data as Product | null;
+}
+
 
 export async function getCategories(): Promise<string[]> {
   const { data, error } = await supabase
@@ -83,10 +104,6 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
     return { success: false, message: "ID do produto não fornecido." };
   }
 
-  // First, check if the user is authenticated and has admin privileges if necessary.
-  // For now, we assume this check is handled by route protection in AdminLayout.
-  // In a real scenario, you might want role-based access control here.
-
   const { error } = await supabase
     .from('products')
     .delete()
@@ -97,10 +114,50 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
     return { success: false, message: `Erro ao excluir produto: ${error.message}. Verifique os logs do servidor.` };
   }
 
-  // Revalidate paths that display products to ensure fresh data
-  revalidatePath('/admin/produtos'); // Admin products page
-  revalidatePath('/'); // Home page (product showcase)
-  // Add any other paths that list products
-
+  revalidatePath('/admin/produtos');
+  revalidatePath('/');
   return { success: true, message: "Produto excluído com sucesso." };
+}
+
+export interface ProductUpdateData {
+  name?: string;
+  description?: string;
+  image?: string;
+  category?: string;
+  is_active?: boolean;
+}
+
+export async function updateProduct(productId: string, productData: ProductUpdateData): Promise<{ success: boolean; message?: string; product?: Product }> {
+  if (!productId) {
+    return { success: false, message: "ID do produto não fornecido." };
+  }
+
+  // Ensure no undefined values are sent to Supabase, as it might clear fields
+  const updateData = Object.fromEntries(
+    Object.entries(productData).filter(([_, v]) => v !== undefined)
+  );
+  
+  if (Object.keys(updateData).length === 0) {
+     return { success: false, message: "Nenhum dado fornecido para atualização." };
+  }
+
+  const { data, error } = await supabase
+    .from('products')
+    .update(updateData)
+    .eq('id', productId)
+    .select('id, name, description, image, category, is_active, created_at')
+    .single();
+
+  if (error) {
+    console.error('Supabase error updating product:', error);
+    return { success: false, message: `Erro ao atualizar produto: ${error.message}. Verifique os logs do servidor.` };
+  }
+
+  revalidatePath('/admin/produtos');
+  revalidatePath(`/admin/produtos/edit/${productId}`);
+  revalidatePath('/'); 
+  // Potentially revalidate specific product public page if you have one:
+  // revalidatePath(`/produtos/${productId}`);
+
+  return { success: true, message: "Produto atualizado com sucesso.", product: data as Product };
 }

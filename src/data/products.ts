@@ -5,10 +5,8 @@ export interface Product {
   description: string;
   image: string;
   category: string;
-  // These fields might come from Supabase but may not be directly used by all components
-  // If ProductCard or other components need them, ensure they are part of this interface.
-  // is_active?: boolean; 
-  // created_at?: string;
+  is_active?: boolean; // Adicionado para poder ser editado e exibido
+  created_at?: string; // Mantido opcional, geralmente gerenciado pelo DB
 }
 
 // Mock data is no longer needed as it will come from Supabase.
@@ -27,4 +25,3 @@ export interface Product {
 //   },
 //   // ... other mock products
 // ];
-
