@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import Image from 'next/image'; // Still needed for search results and now for logo
+import Image from 'next/image'; // Still needed for search results
 import { motion } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
 import { ThemeToggle } from './ThemeToggle';
@@ -101,14 +101,14 @@ export function Header() {
     >
       <div className="container mx-auto flex items-center justify-between max-w-7xl gap-4">
         <Link href="/" className="flex items-center gap-2 flex-shrink-0" aria-label="Nuvyra Store Home">
-          <Image
+          {/* <Image
             src="https://i.imgur.com/4rYd4ps.png"
             alt="Nuvyra Store Logo"
             width={32}
             height={32}
             className="h-8 w-8" 
-          />
-          {/* <h1 className="text-xl font-headline font-bold text-foreground">Nuvyra Store</h1> */}
+          /> */}
+          <h1 className="text-xl font-headline font-bold text-foreground">Nuvyra Store</h1>
         </Link>
 
         <nav className="hidden md:flex items-center space-x-1">
@@ -182,3 +182,5 @@ export function Header() {
     </motion.header>
   );
 }
+
+    
