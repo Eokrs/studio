@@ -45,7 +45,7 @@ export default function DashboardPage() {
 
   const adminSections = [
     { title: "Gerenciar Produtos", description: "Adicionar, editar ou remover produtos da sua vitrine.", icon: Package, href: "/admin/produtos", isImplemented: true },
-    { title: "Visualizar Pedidos", description: "Acompanhar os pedidos recebidos via WhatsApp.", icon: ShoppingBag, href: "/admin/pedidos", isImplemented: false },
+    { title: "Visualizar Pedidos", description: "Acompanhar os pedidos recebidos via WhatsApp.", icon: ShoppingBag, href: "/admin/pedidos", isImplemented: true },
     { title: "Métricas", description: "Analisar o desempenho e engajamento dos usuários.", icon: BarChart3, href: "/admin/metricas", isImplemented: false },
     // { title: "Gerenciar Conteúdo", description: "Editar textos e seções do site (Sobre, Contato).", icon: PencilLine, href: "/admin/conteudo", isImplemented: false },
     // { title: "Gerenciar Usuários", description: "Administrar usuários e permissões.", icon: Users, href: "/admin/usuarios", isImplemented: false },
