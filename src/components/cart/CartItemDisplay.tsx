@@ -18,16 +18,16 @@ export function CartItemDisplay({ item }: CartItemDisplayProps) {
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuantity = parseInt(e.target.value, 10);
     if (!isNaN(newQuantity)) {
-      updateQuantity(item.product.id, newQuantity);
+      updateQuantity(item.id, newQuantity); // Use item.id (composite ID)
     }
   };
 
   const handleIncrement = () => {
-    updateQuantity(item.product.id, item.quantity + 1);
+    updateQuantity(item.id, item.quantity + 1); // Use item.id
   };
 
   const handleDecrement = () => {
-    updateQuantity(item.product.id, item.quantity - 1); // updateQuantity handles <= 0
+    updateQuantity(item.id, item.quantity - 1); // Use item.id
   };
 
   return (
@@ -41,7 +41,9 @@ export function CartItemDisplay({ item }: CartItemDisplayProps) {
       />
       <div className="flex-grow">
         <h4 className="font-medium text-sm text-foreground">{item.product.name}</h4>
-        <p className="text-xs text-muted-foreground">{item.product.category}</p>
+        <p className="text-xs text-muted-foreground">
+          Tam: {item.size} &bull; {item.product.category}
+        </p>
       </div>
       <div className="flex items-center gap-2">
         <Button variant="outline" size="icon" onClick={handleDecrement} className="h-8 w-8">
@@ -53,7 +55,7 @@ export function CartItemDisplay({ item }: CartItemDisplayProps) {
           onChange={handleQuantityChange}
           min="1"
           className="h-8 w-12 text-center px-1 bg-background/80 focus:bg-background"
-          aria-label={`Quantidade de ${item.product.name}`}
+          aria-label={`Quantidade de ${item.product.name} (Tam: ${item.size})`}
         />
         <Button variant="outline" size="icon" onClick={handleIncrement} className="h-8 w-8">
           +
@@ -62,9 +64,9 @@ export function CartItemDisplay({ item }: CartItemDisplayProps) {
       <Button 
         variant="ghost" 
         size="icon" 
-        onClick={() => removeFromCart(item.product.id)} 
+        onClick={() => removeFromCart(item.id)} // Use item.id
         className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 h-8 w-8"
-        aria-label={`Remover ${item.product.name} do carrinho`}
+        aria-label={`Remover ${item.product.name} (Tam: ${item.size}) do carrinho`}
       >
         <Trash2 className="h-4 w-4" />
       </Button>

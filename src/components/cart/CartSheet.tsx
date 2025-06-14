@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CartItemDisplay } from './CartItemDisplay';
-import { ShoppingCart, XIcon, Trash2 } from 'lucide-react'; // Added XIcon for close
+import { ShoppingCart, Trash2 } from 'lucide-react';
 
 interface CartSheetProps {
   children: React.ReactNode; // For the trigger
@@ -29,7 +29,7 @@ export function CartSheet({ children }: CartSheetProps) {
 
     let message = "Olá, gostaria de adquirir os seguintes produtos:\n";
     cartItems.forEach(item => {
-      message += `- ${item.product.name} x${item.quantity}\n`;
+      message += `- ${item.product.name} | Tam: ${item.size} | Quant: ${item.quantity}\n`;
     });
     
     const encodedMessage = encodeURIComponent(message.trim());
@@ -60,7 +60,7 @@ export function CartSheet({ children }: CartSheetProps) {
             <ScrollArea className="flex-grow p-6">
               <div className="space-y-2">
                 {cartItems.map(item => (
-                  <CartItemDisplay key={item.product.id} item={item} />
+                  <CartItemDisplay key={item.id} item={item} /> // Use item.id as key
                 ))}
               </div>
             </ScrollArea>

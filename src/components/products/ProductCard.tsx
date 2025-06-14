@@ -7,15 +7,34 @@ import type { Product } from '@/data/products';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useCart } from '@/context/CartContext'; // Import useCart hook
-import { ShoppingCartIcon } from 'lucide-react'; // For the new button
+import { useCart } from '@/context/CartContext';
+import { ShoppingCartIcon } from 'lucide-react';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast'; // Import useToast
+
+const SIZES = ["37", "38", "39", "40", "41", "42", "43"];
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { addToCart } = useCart(); // Get addToCart function from context
+  const { addToCart } = useCart();
+  const { toast } = useToast(); // Initialize toast
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+
+  const handleAddToCart = () => {
+    if (!selectedSize) {
+      toast({
+        title: "Tamanho Necessário",
+        description: "Por favor, selecione um tamanho antes de adicionar ao carrinho.",
+        variant: "default", // Or consider a custom "warning" variant if available/needed
+      });
+      return;
+    }
+    addToCart(product, selectedSize);
+    setSelectedSize(null); // Reset size selection after adding to cart
+  };
 
   return (
     <m.div
@@ -38,14 +57,37 @@ export function ProductCard({ product }: ProductCardProps) {
       </CardHeader>
       <CardContent className="p-3 flex-grow">
         <CardTitle className="font-headline text-lg mb-1 text-foreground">{product.name}</CardTitle>
-        <CardDescription className="text-xs text-muted-foreground mb-2">{product.description}</CardDescription>
+        <CardDescription className="text-xs text-muted-foreground mb-2 line-clamp-2">{product.description}</CardDescription>
       </CardContent>
-      <CardFooter className="p-3 pt-2 flex flex-col items-start w-full space-y-2">
+      <CardFooter className="p-3 pt-2 flex flex-col items-start w-full space-y-3">
+        <div className="w-full">
+          <p className="text-xs text-muted-foreground mb-1.5">Tamanho:</p>
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {SIZES.map((size) => (
+              <Button
+                key={size}
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedSize(size)}
+                className={`h-8 px-3 text-xs rounded-md transition-all duration-200
+                            border border-white/20 dark:border-white/10
+                            hover:bg-white/30 dark:hover:bg-white/15
+                            focus-visible:ring-1 focus-visible:ring-ring 
+                            ${selectedSize === size 
+                              ? 'bg-primary text-primary-foreground hover:bg-primary/80 dark:hover:bg-primary/70 border-primary/50' 
+                              : 'bg-white/10 dark:bg-black/10 text-foreground/80 hover:text-foreground'
+                            }`}
+              >
+                {size}
+              </Button>
+            ))}
+          </div>
+        </div>
         <Badge variant="secondary" className="bg-accent/20 text-accent-foreground border-accent/30 text-xs">
           {product.category}
         </Badge>
         <Button
-          onClick={() => addToCart(product)}
+          onClick={handleAddToCart}
           variant="outline"
           className="w-full text-foreground/90 font-medium rounded-md transition-all duration-300 shadow-md 
                      border border-primary/30 dark:border-primary/20 
