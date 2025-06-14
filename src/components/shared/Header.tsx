@@ -9,9 +9,10 @@ import { ThemeToggle } from './ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Search as SearchIcon } from 'lucide-react'; // Removed Gem import
+import { Search as SearchIcon } from 'lucide-react';
 import { searchProductsByName } from '@/app/actions/productActions';
 import type { Product } from '@/data/products';
+import { CartButton } from '@/components/cart/CartButton'; // Import CartButton
 
 export function Header() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,12 +46,11 @@ export function Header() {
     try {
       const results = await searchProductsByName(query);
       setSearchResults(results);
-      // Open popover if there's a query, to show results or "no results"
       setIsPopoverOpen(true); 
     } catch (error) {
       console.error('Search failed:', error);
       setSearchResults([]);
-      setIsPopoverOpen(true); // Keep open to potentially show an error message or just indicate failure
+      setIsPopoverOpen(true); 
     }
     setIsSearchLoading(false);
   }, []);
@@ -58,12 +58,11 @@ export function Header() {
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setSearchResults([]);
-      setIsPopoverOpen(false); // Close popover when search term is cleared
+      setIsPopoverOpen(false); 
       setIsSearchLoading(false);
       return;
     }
 
-    // Debounce search
     const timerId = setTimeout(() => {
       fetchResults(searchTerm);
     }, 300);
@@ -78,12 +77,13 @@ export function Header() {
   };
 
   const handleResultClick = (product: Product) => {
-    console.log('Selected product:', product.name); // Placeholder action
-    setSearchTerm(''); // Clear search term
-    setSearchResults([]); // Clear results
-    setIsPopoverOpen(false); // Close popover
+    console.log('Selected product:', product.name); 
+    setSearchTerm(''); 
+    setSearchResults([]); 
+    setIsPopoverOpen(false); 
     // Future: navigate to product page or scroll to product in showcase
-    // scrollToSection(`product-${product.id}`); // Example if product IDs can be targeted
+    // You might want to implement a way to focus or navigate to the product
+    // For now, it just closes the popover.
   };
   
   const handleInputFocus = () => {
@@ -101,7 +101,6 @@ export function Header() {
     >
       <div className="container mx-auto flex items-center justify-between max-w-7xl gap-4">
         <Link href="/" className="flex items-center gap-2 flex-shrink-0" aria-label="Nuvyra Store Home">
-          {/* <Gem className="h-7 w-7 text-primary" /> Removed Gem icon */}
           <h1 className="text-xl font-headline font-bold text-foreground">Nuvyra Store</h1>
         </Link>
         
@@ -136,7 +135,7 @@ export function Header() {
             </PopoverTrigger>
             <PopoverContent 
               className="w-[calc(100vw-2rem)] sm:w-[300px] md:w-[350px] p-0 mt-1" 
-              align="end" // Aligns to the right end of the trigger
+              align="end"
               sideOffset={5}
             >
               {isSearchLoading ? (
@@ -169,6 +168,7 @@ export function Header() {
               ) : null}
             </PopoverContent>
           </Popover>
+          <CartButton /> {/* Add CartButton here */}
           <ThemeToggle />
         </div>
       </div>

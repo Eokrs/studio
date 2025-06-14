@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { Header } from '@/components/shared/Header';
 import { Footer } from '@/components/shared/Footer';
 import { Toaster } from '@/components/ui/toaster';
+import { CartProvider } from '@/context/CartContext'; // Import CartProvider
 
 // --- SEO Metadata Configuration ---
 
@@ -150,10 +151,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Header />
-          <main>{children}</main>
-          <Footer />
-          <Toaster />
+          <CartProvider> {/* Wrap with CartProvider */}
+            <Header />
+            <main>{children}</main>
+            <Footer />
+            <Toaster />
+          </CartProvider>
         </ThemeProvider>
       </body>
     </html>
