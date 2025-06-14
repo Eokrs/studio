@@ -1,28 +1,31 @@
 
 'use server';
 /**
- * @fileOverview Server actions for fetching product data from Supabase.
+ * @fileOverview Server actions for fetching and managing product data from Supabase.
  *
- * - getProducts - Fetches all active products, ordered by creation date.
+ * - getProducts - Fetches products with optional pagination.
  * - getCategories - Fetches all unique active product categories.
  * - searchProductsByName - Fetches products matching a search query.
+ * - deleteProduct - Deletes a product by its ID.
  */
 import { supabase } from '@/lib/supabase';
 import type { Product } from '@/data/products'; // Product interface
+import { revalidatePath } from 'next/cache';
 
-export async function getProducts(): Promise<Product[]> {
-  // Simulate network delay for demonstration, remove in production
-  // await new Promise(resolve => setTimeout(resolve, 700)); 
+export async function getProducts(options?: { limit?: number; offset?: number }): Promise<Product[]> {
+  const { limit = 20, offset = 0 } = options || {};
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('products')
     .select('id, name, description, image, category, created_at, is_active') // Explicitly list columns
-    .eq('is_active', true)
-    .order('created_at', { ascending: false });
+    .eq('is_active', true) // Example: Only active products for admin view too, adjust if needed
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('Supabase error fetching products:', error);
-    // Throw a more informative error to the client
     let detailedMessage = `Não foi possível carregar os produtos. Erro do Supabase: "${error.message}".`;
     if (error.message.includes("column") && error.message.includes("does not exist")) {
       const missingColumnMatch = error.message.match(/column "(.+?)" does not exist/);
@@ -33,13 +36,10 @@ export async function getProducts(): Promise<Product[]> {
     throw new Error(detailedMessage);
   }
 
-  return data as Product[];
+  return data as Product[] || [];
 }
 
 export async function getCategories(): Promise<string[]> {
-  // Simulate network delay for demonstration, remove in production
-  // await new Promise(resolve => setTimeout(resolve, 300));
-  
   const { data, error } = await supabase
     .from('products')
     .select('category')
@@ -54,7 +54,6 @@ export async function getCategories(): Promise<string[]> {
     return [];
   }
 
-  // Get unique categories and sort them
   const uniqueCategories = [...new Set(data.map((item: { category: string }) => item.category))];
   return uniqueCategories.sort();
 }
@@ -66,17 +65,42 @@ export async function searchProductsByName(query: string): Promise<Product[]> {
 
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, description, image, category') // Ensure 'image' is selected for display
-    .ilike('name', `%${query}%`) // Search in product name (case-insensitive)
+    .select('id, name, description, image, category')
+    .ilike('name', `%${query}%`)
     .eq('is_active', true)
-    .order('created_at', { ascending: false }) // Optional: order search results
-    .limit(5); // Limit results for the dropdown
+    .order('created_at', { ascending: false })
+    .limit(5);
 
   if (error) {
     console.error('Supabase search error:', error);
-    // Don't throw an error that breaks the app, just return empty or log
-    // For a search dropdown, it's often better to return empty than throw
     return []; 
   }
   return data as Product[] || [];
+}
+
+export async function deleteProduct(productId: string): Promise<{ success: boolean; message?: string }> {
+  if (!productId) {
+    return { success: false, message: "ID do produto não fornecido." };
+  }
+
+  // First, check if the user is authenticated and has admin privileges if necessary.
+  // For now, we assume this check is handled by route protection in AdminLayout.
+  // In a real scenario, you might want role-based access control here.
+
+  const { error } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', productId);
+
+  if (error) {
+    console.error('Supabase error deleting product:', error);
+    return { success: false, message: `Erro ao excluir produto: ${error.message}. Verifique os logs do servidor.` };
+  }
+
+  // Revalidate paths that display products to ensure fresh data
+  revalidatePath('/admin/produtos'); // Admin products page
+  revalidatePath('/'); // Home page (product showcase)
+  // Add any other paths that list products
+
+  return { success: true, message: "Produto excluído com sucesso." };
 }
