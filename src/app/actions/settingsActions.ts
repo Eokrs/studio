@@ -1,5 +1,4 @@
 
-'use server';
 /**
  * @fileOverview Server actions for managing site-wide settings from Supabase.
  *
@@ -32,6 +31,7 @@ const defaultSettings: SiteSettings = {
 const SETTINGS_ROW_ID = 1; // The ID for the single row of settings
 
 export async function getSiteSettings(): Promise<SiteSettings> {
+  'use server';
   const { data, error } = await supabase
     .from('site_settings')
     .select('site_name, default_seo_title, default_seo_description, seo_keywords')
@@ -65,6 +65,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 }
 
 export async function updateSiteSettings(newSettings: SiteSettings): Promise<{ success: boolean; message: string; settings?: SiteSettings }> {
+  'use server';
   try {
     const validatedSettings = SiteSettingsSchema.parse(newSettings);
 

@@ -1,5 +1,4 @@
 
-'use server';
 /**
  * @fileOverview Server actions for fetching general page content.
  *
@@ -24,8 +23,8 @@ const aboutData: AboutContent = {
 
 
 export async function getAboutContent(): Promise<AboutContent> {
+  'use server';
   // In a real scenario, this would fetch from a database
   await new Promise(resolve => setTimeout(resolve, 400)); // Simulate network delay
   return aboutData;
 }
-
