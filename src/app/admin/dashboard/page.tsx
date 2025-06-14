@@ -3,10 +3,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, LayoutDashboard, Package, Settings, ShoppingBag, BarChart3 } from 'lucide-react';
+import { LogOut, LayoutDashboard, Package, Settings, ShoppingBag, BarChart3, Users, PencilLine } from 'lucide-react';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -19,8 +20,6 @@ export default function DashboardPage() {
         if (user) {
             setUserEmail(user.email || 'Admin');
         } else {
-            // This case should ideally be handled by AdminLayout,
-            // but as a fallback, redirect if no user is found.
             router.replace('/admin/login');
         }
     }
@@ -45,10 +44,12 @@ export default function DashboardPage() {
   };
 
   const adminSections = [
-    { title: "Gerenciar Produtos", description: "Adicionar, editar ou remover produtos da sua vitrine.", icon: Package, href: "/admin/produtos" },
-    { title: "Visualizar Pedidos", description: "Acompanhar os pedidos recebidos via WhatsApp.", icon: ShoppingBag, href: "/admin/pedidos" },
-    { title: "Métricas", description: "Analisar o desempenho e engajamento dos usuários.", icon: BarChart3, href: "/admin/metricas" },
-    { title: "Configurações", description: "Ajustar as configurações gerais do site e do painel.", icon: Settings, href: "/admin/configuracoes" },
+    { title: "Gerenciar Produtos", description: "Adicionar, editar ou remover produtos da sua vitrine.", icon: Package, href: "/admin/produtos", isImplemented: true },
+    { title: "Visualizar Pedidos", description: "Acompanhar os pedidos recebidos via WhatsApp.", icon: ShoppingBag, href: "/admin/pedidos", isImplemented: false },
+    { title: "Métricas", description: "Analisar o desempenho e engajamento dos usuários.", icon: BarChart3, href: "/admin/metricas", isImplemented: false },
+    // { title: "Gerenciar Conteúdo", description: "Editar textos e seções do site (Sobre, Contato).", icon: PencilLine, href: "/admin/conteudo", isImplemented: false },
+    // { title: "Gerenciar Usuários", description: "Administrar usuários e permissões.", icon: Users, href: "/admin/usuarios", isImplemented: false },
+    { title: "Configurações", description: "Ajustar as configurações gerais do site e do painel.", icon: Settings, href: "/admin/configuracoes", isImplemented: false },
   ];
 
   return (
@@ -86,17 +87,22 @@ export default function DashboardPage() {
             {adminSections.map((section) => (
               <div 
                 key={section.title} 
-                // onClick={() => router.push(section.href)} // Navigation for later
-                className="p-6 glass-card rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer flex flex-col items-center text-center"
+                className="p-6 glass-card rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col items-center text-center"
               >
                 <section.icon className="h-10 w-10 text-primary mb-4" />
                 <h3 className="font-semibold text-lg text-foreground mb-2 font-headline">{section.title}</h3>
                 <p className="text-sm text-muted-foreground flex-grow">{section.description}</p>
-                 <Button variant="outline" size="sm" className="mt-4 w-full border-primary/50 text-primary hover:bg-primary/10" 
-                 onClick={() => toast({title: "Em Breve!", description: `A seção '${section.title}' ainda não foi implementada.`})}
-                 >
-                    Acessar
-                </Button>
+                 {section.isImplemented ? (
+                    <Button asChild variant="outline" size="sm" className="mt-4 w-full border-primary/50 text-primary hover:bg-primary/10">
+                        <Link href={section.href}>Acessar</Link>
+                    </Button>
+                 ) : (
+                    <Button variant="outline" size="sm" className="mt-4 w-full border-primary/50 text-primary hover:bg-primary/10" 
+                        onClick={() => toast({title: "Em Breve!", description: `A seção '${section.title}' ainda não foi implementada.`})}
+                    >
+                        Acessar
+                    </Button>
+                 )}
               </div>
             ))}
           </div>
