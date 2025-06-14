@@ -69,33 +69,18 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     toast({
       title: "Produto Adicionado!",
       description: `${product.name} foi adicionado ao seu carrinho.`,
-      variant: "default", 
-    });
-  }, [toast]);
-
-  const removeFromCart = useCallback((productId: string) => {
-    setCartItems((prevItems) => {
-        const itemToRemove = prevItems.find(item => item.product.id === productId);
-        if (itemToRemove) {
-             toast({
-                title: "Produto Removido",
-                description: `${itemToRemove.product.name} foi removido do carrinho.`,
-                variant: "destructive",
-            });
-        }
-        return prevItems.filter(item => item.product.id !== productId);
+      variant: "default",
     });
   }, [toast]);
 
   const updateQuantity = useCallback((productId: string, quantity: number) => {
     setCartItems((prevItems) => {
       if (quantity <= 0) {
-        // Optionally show toast before removing
         const itemBeingRemoved = prevItems.find(item => item.product.id === productId);
         if (itemBeingRemoved) {
             toast({
-                title: "Produto Removido",
-                description: `${itemBeingRemoved.product.name} foi removido devido à quantidade zero.`,
+                title: "Produto Removido!",
+                description: `${itemBeingRemoved.product.name} foi removido do carrinho.`,
                 variant: "destructive",
             });
         }
@@ -109,6 +94,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     });
   }, [toast]);
 
+  const removeFromCart = useCallback((productId: string) => {
+    // Centralize a lógica de remoção e toast em updateQuantity
+    updateQuantity(productId, 0);
+  }, [updateQuantity]);
+
   const clearCart = useCallback(() => {
     setCartItems([]);
     localStorage.removeItem('nuvyraCart'); // Also clear from localStorage
@@ -120,11 +110,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }, [toast]);
 
   const itemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
-  
-  // Placeholder for total price - assuming products don't have a price for now
-  // If products had a 'price' field:
-  // const totalPrice = cartItems.reduce((total, item) => total + (item.product.price * item.quantity), 0);
-  const totalPrice = 0; // Since it's a showcase, price might not be relevant here.
+  const totalPrice = 0;
 
   return (
     <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, itemCount, totalPrice }}>
