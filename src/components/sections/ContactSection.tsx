@@ -7,7 +7,20 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
-import { Facebook, Instagram, Linkedin, Twitter, Send } from 'lucide-react';
+import { Facebook, Instagram, Linkedin, Send } from 'lucide-react';
+
+// X logo SVG component
+const XLogoIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    aria-hidden="true"
+    {...props}
+  >
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
 
 export function ContactSection() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -20,7 +33,7 @@ export function ContactSection() {
   const socialLinks = [
     { Icon: Facebook, href: "#", label: "Facebook" },
     { Icon: Instagram, href: "#", label: "Instagram" },
-    { Icon: Twitter, href: "#", label: "Twitter" },
+    { Icon: XLogoIcon, href: "https://x.com", label: "X" }, // Updated Twitter to X
     { Icon: Linkedin, href: "#", label: "LinkedIn" },
   ];
 
@@ -74,7 +87,7 @@ export function ContactSection() {
                   rel="noopener noreferrer"
                   aria-label={label}
                   whileHover={{ scale: 1.1, y: -2 }}
-                  className="p-2 rounded-full glass-card glass-interactive" // glass-interactive already has a glass hover
+                  className="p-2 rounded-full glass-card glass-interactive" 
                 >
                   <Icon className="w-6 h-6 text-foreground/80 hover:text-primary transition-colors" />
                 </m.a>

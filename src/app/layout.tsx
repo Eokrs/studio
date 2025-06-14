@@ -7,8 +7,8 @@ import { Footer } from '@/components/shared/Footer';
 import { Toaster } from '@/components/ui/toaster';
 
 // --- SEO Metadata Configuration ---
-// IMPORTANTE: Substitua 'https://www.nuvyrastore.com.br' pela URL real do seu site quando estiver em produção.
-const siteUrl = 'https://www.nuvyrastore.com.br'; // <<<<<<< COLOQUE A URL REAL DO SEU SITE AQUI
+
+const siteUrl = 'https://www.nuvyra.store'; 
 const storeName = 'Nuvyra Store';
 const mainTitle = `${storeName}: Tênis Importados da China 1:1 - Qualidade Premium e Estilo`;
 const mainDescription = `Explore a ${storeName}, sua vitrine exclusiva de tênis importados da China com qualidade 1:1. Encontre modelos autênticos e cobiçados de Nike, Adidas, Balenciaga, Jordan, Yeezy e mais. Design premium e aparência impecável.`;
