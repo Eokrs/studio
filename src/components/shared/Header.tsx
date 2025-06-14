@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import Image from 'next/image';
+import Image from 'next/image'; // Still needed for search results
 import { motion } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
 import { ThemeToggle } from './ThemeToggle';
@@ -46,11 +46,11 @@ export function Header() {
     try {
       const results = await searchProductsByName(query);
       setSearchResults(results);
-      setIsPopoverOpen(true); 
+      setIsPopoverOpen(true);
     } catch (error) {
       console.error('Search failed:', error);
       setSearchResults([]);
-      setIsPopoverOpen(true); 
+      setIsPopoverOpen(true);
     }
     setIsSearchLoading(false);
   }, []);
@@ -58,7 +58,7 @@ export function Header() {
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setSearchResults([]);
-      setIsPopoverOpen(false); 
+      setIsPopoverOpen(false);
       setIsSearchLoading(false);
       return;
     }
@@ -77,15 +77,15 @@ export function Header() {
   };
 
   const handleResultClick = (product: Product) => {
-    console.log('Selected product:', product.name); 
-    setSearchTerm(''); 
-    setSearchResults([]); 
-    setIsPopoverOpen(false); 
+    console.log('Selected product:', product.name);
+    setSearchTerm('');
+    setSearchResults([]);
+    setIsPopoverOpen(false);
     // Future: navigate to product page or scroll to product in showcase
     // You might want to implement a way to focus or navigate to the product
     // For now, it just closes the popover.
   };
-  
+
   const handleInputFocus = () => {
     if (searchTerm.trim() || searchResults.length > 0 || isSearchLoading) {
       setIsPopoverOpen(true);
@@ -101,16 +101,16 @@ export function Header() {
     >
       <div className="container mx-auto flex items-center justify-between max-w-7xl gap-4">
         <Link href="/" className="flex items-center gap-2 flex-shrink-0" aria-label="Nuvyra Store Home">
-          <Image 
-            src="https://i.imgur.com/4rYd4ps.png" 
-            alt="Nuvyra Store Logo" 
-            width={32} 
+          {/* <Image
+            src="https://i.imgur.com/4rYd4ps.png"
+            alt="Nuvyra Store Logo"
+            width={32}
             height={32}
             className="h-8 w-8" // Adjust size as needed
-          />
-          {/* <h1 className="text-xl font-headline font-bold text-foreground">Nuvyra Store</h1> */}
+          /> */}
+          <h1 className="text-xl font-headline font-bold text-foreground">Nuvyra Store</h1>
         </Link>
-        
+
         <nav className="hidden md:flex items-center space-x-1">
           {navItems.map((item) => (
             <Button
@@ -140,8 +140,8 @@ export function Header() {
                 />
               </div>
             </PopoverTrigger>
-            <PopoverContent 
-              className="w-[calc(100vw-2rem)] sm:w-[300px] md:w-[350px] p-0 mt-1" 
+            <PopoverContent
+              className="w-[calc(100vw-2rem)] sm:w-[300px] md:w-[350px] p-0 mt-1"
               align="end"
               sideOffset={5}
             >
@@ -158,12 +158,12 @@ export function Header() {
                         tabIndex={0}
                         onKeyDown={(e) => e.key === 'Enter' && handleResultClick(product)}
                       >
-                        <Image 
-                          src={product.image || 'https://placehold.co/40x40.png'} 
-                          alt={product.name} 
-                          width={40} 
-                          height={40} 
-                          className="h-10 w-10 rounded-md object-cover flex-shrink-0" 
+                        <Image
+                          src={product.image || 'https://placehold.co/40x40.png'}
+                          alt={product.name}
+                          width={40}
+                          height={40}
+                          className="h-10 w-10 rounded-md object-cover flex-shrink-0"
                         />
                         <span className="text-sm font-medium text-foreground truncate">{product.name}</span>
                       </div>
