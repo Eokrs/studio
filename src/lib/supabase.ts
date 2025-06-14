@@ -5,12 +5,12 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl) {
-  const errorMsg = "CRITICAL: Missing NEXT_PUBLIC_SUPABASE_URL environment variable. Ensure it is set in your deployment environment (e.g., Netlify site settings under Build & deploy > Environment).";
+  const errorMsg = "CRITICAL: Missing NEXT_PUBLIC_SUPABASE_URL environment variable. Ensure it is set in your deployment environment (e.g., Netlify site settings under Build & deploy > Environment) or .env.local file. The application cannot connect to Supabase without it.";
   console.error(errorMsg);
   throw new Error(errorMsg);
 }
 if (!supabaseAnonKey) {
-  const errorMsg = "CRITICAL: Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable. Ensure it is set in your deployment environment (e.g., Netlify site settings under Build & deploy > Environment).";
+  const errorMsg = "CRITICAL: Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable. Ensure it is set in your deployment environment (e.g., Netlify site settings under Build & deploy > Environment) or .env.local file. The application cannot connect to Supabase without it.";
   console.error(errorMsg);
   throw new Error(errorMsg);
 }
@@ -60,9 +60,18 @@ export interface Database {
   };
 }
 
+let supabaseInstance: SupabaseClient<Database>;
 
-export const supabase: SupabaseClient<Database> = createClient<Database>(
-  supabaseUrl,
-  supabaseAnonKey
-);
+try {
+  // Non-null assertions are safe here due to the checks above
+  supabaseInstance = createClient<Database>(supabaseUrl!, supabaseAnonKey!);
+} catch (e: any) {
+  const errorMsg = `CRITICAL: Supabase client initialization failed unexpectedly. 
+This could be due to severely malformed Supabase URL/key, an internal issue within the Supabase client library, or a networking problem from the server. 
+Please double-check your NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables. 
+Error Details: ${e.message}`;
+  console.error(errorMsg, e);
+  throw new Error(errorMsg);
+}
 
+export const supabase = supabaseInstance;
