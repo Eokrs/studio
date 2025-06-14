@@ -49,8 +49,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (cartItems.length > 0 || localStorage.getItem('nuvyraCart')) { // Only save if cart has items or was previously populated
+    // Only save if cart has items or if it was populated and now is empty (to clear it)
+    if (cartItems.length > 0) {
         localStorage.setItem('nuvyraCart', JSON.stringify(cartItems));
+    } else if (localStorage.getItem('nuvyraCart')) { // If cart became empty, remove from storage
+        localStorage.removeItem('nuvyraCart');
     }
   }, [cartItems]);
 
@@ -74,16 +77,17 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }, [toast]);
 
   const updateQuantity = useCallback((productId: string, quantity: number) => {
+    let itemWasActuallyRemoved = false;
+    let removedItemName: string | undefined;
+
     setCartItems((prevItems) => {
+      const itemIndex = prevItems.findIndex(item => item.product.id === productId);
+
+      if (itemIndex === -1) return prevItems; // Item not found, no change
+
       if (quantity <= 0) {
-        const itemBeingRemoved = prevItems.find(item => item.product.id === productId);
-        if (itemBeingRemoved) {
-            toast({
-                title: "Produto Removido!",
-                description: `${itemBeingRemoved.product.name} foi removido do carrinho.`,
-                variant: "destructive",
-            });
-        }
+        removedItemName = prevItems[itemIndex].product.name;
+        itemWasActuallyRemoved = true;
         return prevItems.filter(item => item.product.id !== productId);
       }
       return prevItems.map(item =>
@@ -92,16 +96,23 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
           : item
       );
     });
-  }, [toast]);
+
+    if (itemWasActuallyRemoved && removedItemName) {
+      toast({
+        title: "Produto Removido!",
+        description: `${removedItemName} foi removido do carrinho.`,
+        variant: "destructive",
+      });
+    }
+  }, [toast, setCartItems]);
 
   const removeFromCart = useCallback((productId: string) => {
-    // Centralize a lógica de remoção e toast em updateQuantity
     updateQuantity(productId, 0);
   }, [updateQuantity]);
 
   const clearCart = useCallback(() => {
     setCartItems([]);
-    localStorage.removeItem('nuvyraCart'); // Also clear from localStorage
+    // localStorage.removeItem('nuvyraCart'); // Handled by useEffect on cartItems change
     toast({
         title: "Carrinho Esvaziado",
         description: "Todos os itens foram removidos do carrinho.",
@@ -110,7 +121,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }, [toast]);
 
   const itemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
-  const totalPrice = 0;
+  const totalPrice = 0; // Price calculation not implemented as per original scope
 
   return (
     <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, itemCount, totalPrice }}>
