@@ -1,10 +1,11 @@
+
 'use client';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod'; // Keep z here for extending the schema locally
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,10 +20,53 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { getSiteSettings, updateSiteSettings } from '@/app/actions/settingsActions';
-import { SiteSettingsSchema, type SiteSettings } from '@/types/settings'; // Updated import
-import { ArrowLeft, Settings, Image as ImageIcon, ExternalLink, ShieldCheck, Construction, Info, Save, Loader2, AlertTriangle } from 'lucide-react';
+import { SiteSettingsSchema, type SiteSettings } from '@/types/settings';
+import { ArrowLeft, Settings, Image as ImageIcon, ExternalLink, ShieldCheck, Construction, Save, Loader2, AlertTriangle } from 'lucide-react';
 
-type SiteSettingsFormValues = SiteSettings & { seoKeywordsString: string };
+// Type for the form's direct input values
+type AdminSettingsFormInputValues = {
+  siteName: string;
+  defaultSeoTitle: string;
+  defaultSeoDescription: string;
+  seoKeywordsString: string; // This is what the <Input> gives
+};
+
+// Zod schema for validating form inputs and transforming to SiteSettings
+const adminSettingsFormSchema = z.object({
+  siteName: SiteSettingsSchema.shape.siteName,
+  defaultSeoTitle: SiteSettingsSchema.shape.defaultSeoTitle,
+  defaultSeoDescription: SiteSettingsSchema.shape.defaultSeoDescription,
+  seoKeywordsString: z.string().min(1, 'Forneça ao menos uma palavra-chave.')
+    .superRefine((val, ctx) => { // val here is string from input
+      const keywords = val.split(',').map(k => k.trim()).filter(k => k.length > 0);
+      if (keywords.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Forneça ao menos uma palavra-chave válida.",
+          path: ['seoKeywordsString']
+        });
+      }
+      keywords.forEach(keyword => {
+        if (keyword.length < 2) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Palavra-chave "${keyword}" é muito curta. Mínimo 2 caracteres.`,
+            path: ['seoKeywordsString']
+          });
+        }
+      });
+    })
+}).transform(validatedInputData => {
+  // validatedInputData is { siteName, defaultSeoTitle, defaultSeoDescription, seoKeywordsString }
+  return {
+    siteName: validatedInputData.siteName,
+    defaultSeoTitle: validatedInputData.defaultSeoTitle,
+    defaultSeoDescription: validatedInputData.defaultSeoDescription,
+    seoKeywords: validatedInputData.seoKeywordsString.split(',').map(k => k.trim()).filter(k => k.length > 0)
+  };
+});
+// The output type of this schema is SiteSettings.
+
 
 export default function AdminConfiguracoesPage() {
   const { toast } = useToast();
@@ -30,36 +74,13 @@ export default function AdminConfiguracoesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialLoadError, setInitialLoadError] = useState<string | null>(null);
 
-  // Extend the base SiteSettingsSchema for client-side form handling (seoKeywordsString)
-  const clientSideFormSchema = SiteSettingsSchema.extend({
-    seoKeywordsString: z.string().min(1, 'Forneça ao menos uma palavra-chave.')
-      .transform(val => val.split(',').map(k => k.trim()).filter(k => k.length > 0))
-      .superRefine((val, ctx) => {
-        if (val.length === 0) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Forneça ao menos uma palavra-chave válida.",
-          });
-        }
-        val.forEach(keyword => {
-          if (keyword.length < 2) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: `Palavra-chave "${keyword}" é muito curta. Mínimo 2 caracteres.`,
-            });
-          }
-        });
-      })
-  }).omit({ seoKeywords: true }); // We handle seoKeywords through seoKeywordsString
-
-
-  const form = useForm<SiteSettingsFormValues>({
-    resolver: zodResolver(clientSideFormSchema),
+  const form = useForm<AdminSettingsFormInputValues>({ // Use the input type here
+    resolver: zodResolver(adminSettingsFormSchema), // This schema transforms to SiteSettings
     defaultValues: {
       siteName: '',
       defaultSeoTitle: '',
       defaultSeoDescription: '',
-      seoKeywordsString: '',
+      seoKeywordsString: '', // String for the input
     },
   });
 
@@ -69,11 +90,11 @@ export default function AdminConfiguracoesPage() {
       setInitialLoadError(null);
       try {
         const settings = await getSiteSettings();
-        form.reset({
+        form.reset({ // Reset with AdminSettingsFormInputValues
           siteName: settings.siteName,
           defaultSeoTitle: settings.defaultSeoTitle,
           defaultSeoDescription: settings.defaultSeoDescription,
-          seoKeywordsString: settings.seoKeywords.join(', '),
+          seoKeywordsString: settings.seoKeywords.join(', '), // Convert array back to string for input
         });
       } catch (error) {
         console.error("Failed to load site settings:", error);
@@ -87,24 +108,19 @@ export default function AdminConfiguracoesPage() {
     fetchSettings();
   }, [form, toast]);
 
-  const onSubmit: SubmitHandler<SiteSettingsFormValues> = async (data) => {
+  // The data received here is already transformed to SiteSettings by zodResolver
+  const onSubmit: SubmitHandler<SiteSettings> = async (transformedData) => {
     setIsSubmitting(true);
     try {
-      // Transform seoKeywordsString back into an array for the action
-      const settingsToSave: SiteSettings = {
-        siteName: data.siteName,
-        defaultSeoTitle: data.defaultSeoTitle,
-        defaultSeoDescription: data.defaultSeoDescription,
-        seoKeywords: data.seoKeywordsString.split(',').map(k => k.trim()).filter(k => k.length > 0),
-      };
+      // transformedData is already in the SiteSettings shape
+      const result = await updateSiteSettings(transformedData);
       
-      const result = await updateSiteSettings(settingsToSave);
       if (result.success && result.settings) {
         toast({
           title: "Sucesso!",
           description: result.message,
         });
-        // Optionally re-sync form if backend modified data (though not expected with mock)
+        // Reset form with AdminSettingsFormInputValues, converting array back to string for input
         form.reset({
           siteName: result.settings.siteName,
           defaultSeoTitle: result.settings.defaultSeoTitle,
@@ -172,7 +188,6 @@ export default function AdminConfiguracoesPage() {
         </Button>
       </div>
 
-      {/* Site Settings Form Card */}
       <Card className="glass-card mb-8">
         <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-3">
           <div className="p-2 bg-primary/10 rounded-md">
@@ -266,7 +281,6 @@ export default function AdminConfiguracoesPage() {
         </CardContent>
       </Card>
 
-      {/* Placeholder for other settings categories */}
       <div className="mb-6 p-4 border border-amber-500/30 dark:border-amber-500/70 bg-amber-500/10 dark:bg-amber-500/20 rounded-md text-amber-700 dark:text-amber-400">
         <Construction className="inline-block h-5 w-5 mr-2 align-middle" />
         <strong className="font-semibold">Outras Configurações em Desenvolvimento:</strong> As seções abaixo são representações de funcionalidades futuras.
@@ -301,3 +315,4 @@ export default function AdminConfiguracoesPage() {
     </div>
   );
 }
+    
