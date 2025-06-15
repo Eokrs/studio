@@ -6,7 +6,7 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
-// import { useRouter } from 'next/navigation'; // Kept commented, using window.location.href
+// import { useRouter } from 'next/navigation'; // Using window.location.href for full page nav
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,21 +32,14 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [isCheckingSession, setIsCheckingSession] = useState(false); // Initialize to false
+  // Initialize to false to prevent loader flash if not needed, or if middleware handles redirect
+  const [isCheckingSession, setIsCheckingSession] = useState(false);
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
-
-  // Temporarily commented out to prevent reload loop
+  // Temporarily commented out to isolate server-side redirect loop
   /*
   useEffect(() => {
     console.log('LOGIN_PAGE_EFFECT: Iniciando verificação de sessão no cliente.');
-    setIsCheckingSession(true); // Set true when starting check
+    setIsCheckingSession(true); 
     const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -55,7 +48,7 @@ export default function LoginPage() {
         } else if (session) {
           console.log('LOGIN_PAGE_EFFECT: Sessão encontrada no cliente. Redirecionando para /admin/dashboard.');
           window.location.href = '/admin/dashboard'; // Use full page navigation
-          return; // Important to prevent setIsCheckingSession(false) if redirecting
+          return; 
         } else {
           console.log('LOGIN_PAGE_EFFECT: Nenhuma sessão encontrada no cliente. Exibindo formulário de login.');
         }
@@ -63,14 +56,22 @@ export default function LoginPage() {
         console.error('LOGIN_PAGE_EFFECT: Exceção ao verificar sessão no cliente:', e.message);
       } finally {
         // Only set to false if not redirecting
-        if (!window.location.pathname.endsWith('/admin/dashboard')) { 
+         if (!window.location.pathname.endsWith('/admin/dashboard')) { 
              setIsCheckingSession(false);
-        }
+         }
       }
     };
     checkSession();
   }, []); 
   */
+
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
   const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
     setIsLoggingIn(true);
@@ -96,13 +97,12 @@ export default function LoginPage() {
           variant: 'destructive',
         });
       } else {
-        console.log('LOGIN_PAGE_SUBMIT: Login com Supabase bem-sucedido. Redirecionando para /admin/dashboard.');
+        console.log('LOGIN_PAGE_SUBMIT: Login com Supabase bem-sucedido. Redirecionando para /admin/dashboard via window.location.href.');
         toast({
           title: 'Login Bem-sucedido!',
           description: 'Você será redirecionado para o dashboard.',
         });
-        // Forçar uma navegação completa para que o middleware possa processar a nova sessão
-        window.location.href = '/admin/dashboard';
+        window.location.href = '/admin/dashboard'; // Force full page navigation
       }
     } catch (e: any) {
       console.error('LOGIN_PAGE_SUBMIT: Exceção durante o login com Supabase:', e.message);
@@ -113,7 +113,11 @@ export default function LoginPage() {
         variant: 'destructive',
       });
     } finally {
-      setIsLoggingIn(false);
+      // Avoid setting isLoggingIn to false if a redirect is happening,
+      // though with window.location.href, the component might unmount anyway.
+      if (!window.location.pathname.endsWith('/admin/dashboard')) {
+        setIsLoggingIn(false);
+      }
     }
   };
 
