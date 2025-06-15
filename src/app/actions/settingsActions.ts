@@ -23,18 +23,12 @@ const defaultSettings: SiteSettings = {
   seoKeywords: ['tênis importados', 'qualidade 1:1', 'Nuvyra Store', 'réplicas premium'],
 };
 
-// IMPORTANT: Ensure your Supabase Row Level Security (RLS) policies for the 'site_settings' table
-// allow 'authenticated' users to 'INSERT' and 'UPDATE' the row with id=1,
-// and 'anon' users to 'SELECT' it. Disabling RLS entirely is generally NOT RECOMMENDED
-// for security reasons, as it might expose write operations to unintended roles if table GRANTS are too permissive.
-// If RLS is enabled and writes are failing, ensure your server actions are using an auth-aware Supabase client
-// (e.g., createServerActionClient from @supabase/auth-helpers-nextjs) so policies for the 'authenticated' role apply correctly.
-// The most common reason for RLS failures with 'upsert' is that the client is not authenticated,
-// or the RLS policy for 'INSERT' for the 'authenticated' role is missing or too restrictive.
 const SETTINGS_ROW_ID = 1; // The ID for the single row of settings
 
 export async function getSiteSettings(): Promise<SiteSettings> {
   try {
+    // For public settings, a non-authenticated client might be okay if RLS allows anon reads.
+    // Using createServerActionClient is fine.
     const supabase = createServerActionClient<Database>({ cookies });
     const { data, error } = await supabase
       .from('site_settings')
@@ -43,17 +37,15 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') { // PGRST116: "Searched for a single row, but 0 rows were found"
+      if (error.code === 'PGRST116') { 
         console.warn('No site settings found in database, returning default values. Admin save will create the row.');
         return defaultSettings;
       }
       console.error('Supabase error fetching site settings:', error);
-      // Fallback to default settings in case of other errors, but log it.
       return defaultSettings;
     }
 
     if (data) {
-      // Map Supabase column names to our SiteSettings type
       return {
         siteName: data.site_name,
         defaultSeoTitle: data.default_seo_title,
@@ -63,10 +55,8 @@ export async function getSiteSettings(): Promise<SiteSettings> {
     }
   } catch (e) {
     console.error("Unexpected error in getSiteSettings:", e);
-    // Fallback to default settings if any unexpected error occurs during the try block
     return defaultSettings;
   }
-
   return defaultSettings;
 }
 
@@ -89,7 +79,7 @@ export async function updateSiteSettings(newSettings: SiteSettings): Promise<{ s
     if (!authUser) {
       return { success: false, message: "Ação não autorizada. Usuário não autenticado para salvar configurações." };
     }
-    user = authUser;
+    user = authUser; // User is authenticated
   } catch (e) {
     console.error('ACTION_UNEXPECTED_AUTH_ERROR: Unexpected error getting user in updateSiteSettings:', e);
     const errorMessage = e instanceof Error ? e.message : 'Ocorreu um erro desconhecido durante a verificação de autenticação.';
@@ -108,11 +98,9 @@ export async function updateSiteSettings(newSettings: SiteSettings): Promise<{ s
           default_seo_title: validatedSettings.defaultSeoTitle,
           default_seo_description: validatedSettings.defaultSeoDescription,
           seo_keywords: validatedSettings.seoKeywords,
-          // created_at is handled by the database default
-          // updated_at is handled by the database trigger
         },
         {
-          onConflict: 'id', // If row with id=1 exists, update it
+          onConflict: 'id', 
         }
       )
       .select('site_name, default_seo_title, default_seo_description, seo_keywords')
@@ -121,7 +109,7 @@ export async function updateSiteSettings(newSettings: SiteSettings): Promise<{ s
     if (upsertError) {
       console.error('ACTION_DB_ERROR: Supabase error updating site settings:', upsertError);
       if (upsertError.message.includes('violates row-level security policy') || upsertError.message.includes('RLS')) {
-        return { success: false, message: `Erro ao salvar configurações: Violação da política de segurança a nível de linha (RLS) do banco de dados. Certifique-se de que as políticas RLS para a tabela 'site_settings' permitem que usuários autenticados (admin) insiram/atualizem a linha com id=${SETTINGS_ROW_ID}, e que o client Supabase no server action está ciente da sessão autenticada. Detalhe: ${upsertError.message}` };
+        return { success: false, message: `Erro ao salvar configurações: Violação da política de segurança a nível de linha (RLS) do banco de dados. Detalhe: ${upsertError.message}` };
       }
       return { success: false, message: `Erro ao salvar configurações no banco de dados: ${upsertError.message}` };
     }

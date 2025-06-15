@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase'; // Standard client-side Supabase instance for signIn
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,7 +24,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [isCheckingSession, setIsCheckingSession] = useState(true); // To prevent flicker before middleware redirect
 
   const {
     register,
@@ -34,8 +34,11 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
+  // This effect handles the case where a user with an active session lands directly on /admin/login.
+  // The middleware should also catch this, but this provides an additional client-side check.
   useEffect(() => {
     const checkSessionAndRedirect = async () => {
+      // Use the public Supabase client here; middleware handles server-side session validation
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         router.replace('/admin/dashboard');
@@ -65,7 +68,9 @@ export default function LoginPage() {
           title: 'Login bem-sucedido!',
           description: 'Redirecionando para o painel...',
         });
-        router.replace('/admin/dashboard');
+        // Instead of router.replace, let the browser navigate and middleware handle redirection
+        // This ensures the middleware has a chance to set/refresh cookies from the new session.
+        window.location.href = '/admin/dashboard';
       }
     } catch (e: any) {
       toast({

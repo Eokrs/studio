@@ -20,14 +20,22 @@ import { revalidatePath } from 'next/cache';
 console.log('PRODUCT ACTIONS FILE LOADED - Top Level Log');
 
 // Helper function to get the Supabase auth cookie name
+// This might not be strictly necessary if Supabase Auth Helpers handle it all.
 const getSupabaseAuthCookieName = () => {
   // This specific cookie name is based on previous logs from the user.
   // It should match 'sb-<project-ref>-auth-token'
-  // For user: drxttdahrbbhndcbnmzq
-  return 'sb-drxttdahrbbhndcbnmzq-auth-token';
+  const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.split('.')[0].replace('https://', '');
+  if (!projectRef) {
+    console.warn('[getSupabaseAuthCookieName] Could not derive projectRef from NEXT_PUBLIC_SUPABASE_URL');
+    return 'sb-unknown-auth-token'; // Fallback, though unlikely to work
+  }
+  return `sb-${projectRef}-auth-token`;
 };
 
 export async function getProducts(options?: { limit?: number; offset?: number }): Promise<Product[]> {
+  // For public data, we might not need an authenticated client,
+  // but using createServerActionClient is fine if RLS allows anon reads.
+  // If strictly public, createServerComponentClient could also be used here if in an RSC.
   const supabase = createServerActionClient<Database>({ cookies });
   const { limit = 20, offset = 0 } = options || {};
 
@@ -125,8 +133,8 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
   }
 
   let supabase;
-  let cookieDebugMessage = "Cookie check not performed due to early exit or error.";
   const authCookieName = getSupabaseAuthCookieName();
+  let cookieDebugMessage = "Cookie check not performed due to early exit or error.";
 
   try {
     // IMPORTANT: Pass the cookies FUNCTION from next/headers
@@ -137,6 +145,9 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
     const specificAuthCookie = cookieStoreForLogging.get(authCookieName);
     cookieDebugMessage = specificAuthCookie ? `Cookie '${authCookieName}' ENCONTRADO (valor: ${specificAuthCookie.value.substring(0,15)}...).` : `Cookie '${authCookieName}' NÃO ENCONTRADO.`;
     console.log(`--- [deleteProduct Action] --- STEP 3: Cookie check: ${cookieDebugMessage}`);
+    // const allCookies = cookieStoreForLogging.getAll();
+    // console.log(`--- [deleteProduct Action] --- All cookies: ${JSON.stringify(allCookies.map(c => ({name: c.name, value: c.value.substring(0,10) + '...'})))}`);
+
 
   } catch (clientError: any) {
     console.error('--- [deleteProduct Action] --- CRITICAL ERROR: Failed to create Supabase client or access cookies:', clientError.message, clientError.stack);
@@ -181,8 +192,8 @@ export async function updateProduct(productId: string, productData: ProductUpdat
   console.log("Product Data:", JSON.stringify(productData, null, 2));
 
   let supabase;
-  let cookieDebugMessage = "Cookie check not performed due to early exit or error.";
   const authCookieName = getSupabaseAuthCookieName();
+  let cookieDebugMessage = "Cookie check not performed due to early exit or error.";
 
   try {
     // IMPORTANT: Pass the cookies FUNCTION from next/headers
@@ -197,7 +208,6 @@ export async function updateProduct(productId: string, productData: ProductUpdat
     // For more detailed debugging of all cookies:
     // const allCookies = cookieStore.getAll();
     // console.log(`--- [updateProduct Action] --- All cookies available:`, JSON.stringify(allCookies.map(c => ({ name: c.name, value: c.value.substring(0,15) + '...' }))));
-
 
   } catch (clientError: any) {
     console.error('--- [updateProduct Action] --- CRITICAL ERROR: Failed to create Supabase client or access cookies:', clientError.message, clientError.stack);
@@ -249,4 +259,3 @@ export async function updateProduct(productId: string, productData: ProductUpdat
     product: updatedProductData as Product
   };
 }
-    
