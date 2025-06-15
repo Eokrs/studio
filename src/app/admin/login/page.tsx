@@ -31,35 +31,29 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  // Loader for initial session check - this page should not show if middleware redirects correctly
-  const [isCheckingSession, setIsCheckingSession] = useState(true); 
+  const [isCheckingSession, setIsCheckingSession] = useState(true); // Start true to show loader
 
-  // This useEffect is a fallback. Ideally, the middleware handles redirecting
-  // authenticated users away from /admin/login.
   useEffect(() => {
     console.log('LOGIN_PAGE_EFFECT: Running to check client-side session.');
     const checkClientSession = async () => {
       try {
-        // Check session using the client-side Supabase instance
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           console.log('LOGIN_PAGE_EFFECT: Client-side session found. Redirecting to /admin/dashboard via window.location.href.');
           window.location.href = '/admin/dashboard'; // Force full page navigation
-          return; // Important to prevent setIsCheckingSession(false) if redirecting
+          // No need to setIsCheckingSession(false) here as the page will navigate away
+          return; 
         } else {
-          console.log('LOGIN_PAGE_EFFECT: No client-side session found.');
+          console.log('LOGIN_PAGE_EFFECT: No client-side session found. Showing login form.');
+          setIsCheckingSession(false); // No session, allow form to show
         }
       } catch (e: any) {
         console.error('LOGIN_PAGE_EFFECT: Error checking client-side session:', e.message);
-      } finally {
-        // Only set to false if not redirecting (though window.location.href should unmount)
-        if (!window.location.pathname.endsWith('/admin/dashboard')) {
-             setIsCheckingSession(false);
-        }
+        setIsCheckingSession(false); // Error occurred, allow form to show
       }
     };
     checkClientSession();
-  }, []);
+  }, []); // Empty dependency array ensures this runs once on mount
 
 
   const form = useForm<LoginFormValues>({
@@ -89,14 +83,13 @@ export default function LoginPage() {
           description: error.message,
           variant: 'destructive',
         });
-        setIsLoggingIn(false); // Re-enable form
+        setIsLoggingIn(false);
       } else {
         console.log('LOGIN_PAGE_SUBMIT: Supabase login successful. Redirecting to /admin/dashboard via window.location.href.');
         toast({
           title: 'Login Bem-sucedido!',
           description: 'Você será redirecionado para o dashboard.',
         });
-        // CRITICAL: Force full page navigation to ensure middleware processes new cookies
         window.location.href = '/admin/dashboard';
         // setIsLoggingIn(false) might not be reached if redirect happens quickly
       }
@@ -108,10 +101,8 @@ export default function LoginPage() {
         description: 'Ocorreu um erro inesperado durante o login.',
         variant: 'destructive',
       });
-      setIsLoggingIn(false); // Re-enable form
+      setIsLoggingIn(false);
     }
-    // No finally setIsLoggingIn(false) here, as redirect should unmount.
-    // If redirect fails, error handling above sets it.
   };
   
   if (isCheckingSession) {
@@ -194,3 +185,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
