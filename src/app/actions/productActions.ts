@@ -11,7 +11,7 @@
  * - updateProduct - Updates an existing product.
  */
 import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { cookies } from 'next/headers'; // Import the cookies function
 import type { Database } from '@/lib/supabase';
 import type { Product, ProductUpdateData } from '@/data/products';
 import { revalidatePath } from 'next/cache';
@@ -25,6 +25,7 @@ const getSupabaseAuthCookieName = () => {
   // based on your Supabase project reference.
   // You can find your project's reference in your Supabase dashboard URL (e.g., https://<project-ref>.supabase.co)
   // The cookie name is usually sb-<project-ref>-auth-token
+  // For your project, it appears to be 'sb-drxttdahrbbhndcbnmzq-auth-token' based on logs
   return 'sb-drxttdahrbbhndcbnmzq-auth-token';
 };
 
@@ -137,73 +138,48 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
 }
 
 export async function updateProduct(productId: string, productData: ProductUpdateData): Promise<{ success: boolean; message?: string; product?: Product }> {
-  console.log(`--- [updateProduct Action] ---`);
+  console.log(`--- [updateProduct Action] --- STEP 1: Action Called ---`);
   console.log(`Product ID: ${productId}`);
-  console.log("Product Data:", productData);
+  console.log("Product Data:", JSON.stringify(productData, null, 2));
 
-  const cookieStore = cookies();
-  const allCookies = cookieStore.getAll();
-  console.log(`All cookies available to updateProduct:`, allCookies);
+  const cookieStoreForLogging = cookies(); // Call it for logging purposes
+  const allCookiesForLogging = cookieStoreForLogging.getAll();
+  console.log(`--- [updateProduct Action] --- STEP 2: All cookies from cookieStore (for logging):`, JSON.stringify(allCookiesForLogging, null, 2));
 
   const authCookieName = getSupabaseAuthCookieName();
-  const specificAuthCookieFromAll = allCookies.find(cookie => cookie.name === authCookieName);
-  console.log(`Value of specific cookie ${authCookieName} (from getAll):`, specificAuthCookieFromAll);
+  const specificAuthCookieDirectForLogging = cookieStoreForLogging.get(authCookieName);
+  console.log(`--- [updateProduct Action] --- STEP 3: Specific auth cookie '${authCookieName}' (direct get for logging):`, JSON.stringify(specificAuthCookieDirectForLogging, null, 2));
 
-  const specificAuthCookieDirect = cookieStore.get(authCookieName);
-  console.log(`Value of specific cookie ${authCookieName} (from direct get()):`, specificAuthCookieDirect);
+  let supabase;
+  try {
+    // IMPORTANT: Pass the cookies FUNCTION from next/headers, not the instance cookies()
+    supabase = createServerActionClient<Database>({ cookies });
+    console.log(`--- [updateProduct Action] --- STEP 4: Supabase client created ---`);
+  } catch (clientError: any) {
+    console.error('--- [updateProduct Action] --- CRITICAL ERROR: Failed to create Supabase client:', clientError.message, clientError.stack);
+    return { success: false, message: `Erro crítico ao inicializar cliente Supabase: ${clientError.message}` };
+  }
 
-  const supabase = createServerActionClient<Database>({ cookies });
   const { data: { user }, error: authError } = await supabase.auth.getUser();
+  console.log(`--- [updateProduct Action] --- STEP 5: supabase.auth.getUser() CALLED ---`);
 
   if (authError) {
-    console.error('Error getting user in updateProduct server action:', authError); 
+    console.error('--- [updateProduct Action] --- AUTH ERROR from supabase.auth.getUser():', JSON.stringify(authError, null, 2));
     return { success: false, message: `Erro de autenticação ao atualizar: ${authError.message}` };
   }
 
   if (!user) {
-    console.warn('No user found in updateProduct server action (no authError). User object:', user);
-    return { success: false, message: "Ação não autorizada. Usuário não autenticado." };
+    console.warn('--- [updateProduct Action] --- AUTH WARNING: No user object returned from supabase.auth.getUser() (but no authError).');
+    return { success: false, message: "Ação não autorizada. Usuário não autenticado (no user object)." };
   }
 
-  console.log('User object from supabase.auth.getUser():', user);
+  console.log('--- [updateProduct Action] --- AUTH SUCCESS: User object retrieved:', JSON.stringify(user, null, 2));
   
   // The actual database update logic is still commented out.
   // We first want to ensure authentication works.
   // If the logs above show a valid user, the next step will be to uncomment the database update.
-  /*
-  if (!productId) {
-    return { success: false, message: "ID do produto não fornecido." };
-  }
-
-  const updateDataToDb = Object.fromEntries(
-    Object.entries(productData).filter(([_, v]) => v !== undefined)
-  );
   
-  if (Object.keys(updateDataToDb).length === 0) {
-     return { success: false, message: "Nenhum dado fornecido para atualização." };
-  }
-
-  const { data, error } = await supabase
-    .from('products')
-    .update(updateDataToDb)
-    .eq('id', productId)
-    .select('id, name, description, image, category, is_active, created_at')
-    .single();
-
-  if (error) {
-    console.error('Supabase error updating product:', error);
-    return { success: false, message: `Erro ao atualizar produto: ${error.message}. Verifique os logs do servidor e as políticas RLS.` };
-  }
-
-  revalidatePath('/admin/produtos');
-  revalidatePath(`/admin/produtos/edit/${productId}`);
-  revalidatePath('/'); 
-
-  return { success: true, message: "Produto atualizado com sucesso.", product: data as Product };
-  */
-
-  // For now, return a mocked success if authentication passes
-  console.log("Update Product: Authentication seems to have passed (user object found). Returning MOCKED success for database part.");
+  console.log("--- [updateProduct Action] --- STEP 6: Authentication seems to have passed. Returning MOCKED success for database part for now.");
   return { 
     success: true, 
     message: "Autenticação OK! Atualização do produto no banco de dados ainda está mockada.",
