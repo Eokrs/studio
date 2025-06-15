@@ -5,6 +5,7 @@ import { AboutSection } from '@/components/sections/AboutSection';
 import { ContactSection } from '@/components/sections/ContactSection';
 import { MotionLazyContainer } from '@/components/animations/MotionLazyContainer';
 
+export const dynamic = 'force-dynamic'; // Ensures the page is dynamically rendered
 
 export default function HomePage() {
   return (
