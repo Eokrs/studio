@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Server actions for managing site-wide settings from Supabase.
@@ -10,7 +11,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import type { Database } from '@/lib/supabase'; // Import Database type from lib/supabase
+import type { Database } from '@/lib/supabase';
 import type { SiteSettings } from '@/types/settings';
 import { SiteSettingsSchema } from '@/types/settings';
 
@@ -24,55 +25,81 @@ const defaultSettings: SiteSettings = {
 
 // IMPORTANT: Ensure your Supabase Row Level Security (RLS) policies for the 'site_settings' table
 // allow 'authenticated' users to 'INSERT' and 'UPDATE' the row with id=1,
-// and 'anon' users to 'SELECT' it. Disabling RLS entirely is generally not recommended
+// and 'anon' users to 'SELECT' it. Disabling RLS entirely is generally NOT RECOMMENDED
 // for security reasons, as it might expose write operations to unintended roles if table GRANTS are too permissive.
 // If RLS is enabled and writes are failing, ensure your server actions are using an auth-aware Supabase client
-// (e.g., createServerActionClient) so policies for the 'authenticated' role apply correctly.
+// (e.g., createServerActionClient from @supabase/auth-helpers-nextjs) so policies for the 'authenticated' role apply correctly.
+// The most common reason for RLS failures with 'upsert' is that the client is not authenticated,
+// or the RLS policy for 'INSERT' for the 'authenticated' role is missing or too restrictive.
 const SETTINGS_ROW_ID = 1; // The ID for the single row of settings
 
 export async function getSiteSettings(): Promise<SiteSettings> {
-  const supabase = createServerActionClient<Database>({ cookies });
-  const { data, error } = await supabase
-    .from('site_settings')
-    .select('site_name, default_seo_title, default_seo_description, seo_keywords')
-    .eq('id', SETTINGS_ROW_ID)
-    .single();
+  try {
+    const supabase = createServerActionClient<Database>({ cookies });
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('site_name, default_seo_title, default_seo_description, seo_keywords')
+      .eq('id', SETTINGS_ROW_ID)
+      .single();
 
-  if (error) {
-    if (error.code === 'PGRST116') { // PGRST116: "Searched for a single row, but 0 rows were found"
-      console.warn('No site settings found in database, returning default values. Admin save will create the row.');
+    if (error) {
+      if (error.code === 'PGRST116') { // PGRST116: "Searched for a single row, but 0 rows were found"
+        console.warn('No site settings found in database, returning default values. Admin save will create the row.');
+        return defaultSettings;
+      }
+      console.error('Supabase error fetching site settings:', error);
+      // Fallback to default settings in case of other errors, but log it.
       return defaultSettings;
     }
-    console.error('Supabase error fetching site settings:', error);
-    // Fallback to default settings in case of other errors, but log it.
-    return defaultSettings;
-  }
 
-  if (data) {
-    // Map Supabase column names to our SiteSettings type
-    return {
-      siteName: data.site_name,
-      defaultSeoTitle: data.default_seo_title,
-      defaultSeoDescription: data.default_seo_description,
-      seoKeywords: data.seo_keywords,
-    };
+    if (data) {
+      // Map Supabase column names to our SiteSettings type
+      return {
+        siteName: data.site_name,
+        defaultSeoTitle: data.default_seo_title,
+        defaultSeoDescription: data.default_seo_description,
+        seoKeywords: data.seo_keywords,
+      };
+    }
+  } catch (e) {
+    console.error("Unexpected error in getSiteSettings:", e);
+    // Fallback to default settings if any unexpected error occurs during the try block
+    return defaultSettings;
   }
 
   return defaultSettings;
 }
 
 export async function updateSiteSettings(newSettings: SiteSettings): Promise<{ success: boolean; message: string; settings?: SiteSettings }> {
-  const supabase = createServerActionClient<Database>({ cookies });
+  let supabase;
+  try {
+    supabase = createServerActionClient<Database>({ cookies });
+  } catch (clientError) {
+    console.error('CRITICAL_ACTION_ERROR: Failed to create Supabase client in updateSiteSettings:', clientError);
+    return { success: false, message: 'Erro crítico ao inicializar o cliente de banco de dados para salvar configurações.' };
+  }
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return { success: false, message: "Ação não autorizada. Usuário não autenticado." };
+  let user;
+  try {
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    if (authError) {
+      console.error('ACTION_AUTH_ERROR: Supabase error getting user in updateSiteSettings:', authError);
+      return { success: false, message: `Erro de autenticação ao salvar configurações: ${authError.message}` };
+    }
+    if (!authUser) {
+      return { success: false, message: "Ação não autorizada. Usuário não autenticado para salvar configurações." };
+    }
+    user = authUser;
+  } catch (e) {
+    console.error('ACTION_UNEXPECTED_AUTH_ERROR: Unexpected error getting user in updateSiteSettings:', e);
+    const errorMessage = e instanceof Error ? e.message : 'Ocorreu um erro desconhecido durante a verificação de autenticação.';
+    return { success: false, message: `Erro inesperado na autenticação: ${errorMessage}` };
   }
 
   try {
     const validatedSettings = SiteSettingsSchema.parse(newSettings);
 
-    const { data: upsertedData, error } = await supabase
+    const { data: upsertedData, error: upsertError } = await supabase
       .from('site_settings')
       .upsert(
         {
@@ -81,7 +108,8 @@ export async function updateSiteSettings(newSettings: SiteSettings): Promise<{ s
           default_seo_title: validatedSettings.defaultSeoTitle,
           default_seo_description: validatedSettings.defaultSeoDescription,
           seo_keywords: validatedSettings.seoKeywords,
-          // created_at and updated_at are handled by the database
+          // created_at is handled by the database default
+          // updated_at is handled by the database trigger
         },
         {
           onConflict: 'id', // If row with id=1 exists, update it
@@ -90,12 +118,12 @@ export async function updateSiteSettings(newSettings: SiteSettings): Promise<{ s
       .select('site_name, default_seo_title, default_seo_description, seo_keywords')
       .single();
 
-    if (error) {
-      console.error('Supabase error updating site settings:', error);
-      if (error.message.includes('violates row-level security policy') || error.message.includes('RLS')) {
-        return { success: false, message: `Erro ao salvar configurações: Violação da política de segurança a nível de linha (RLS) do banco de dados. Certifique-se de que as políticas RLS para a tabela 'site_settings' permitem que usuários autenticados (admin) insiram/atualizem a linha com id=${SETTINGS_ROW_ID}, e que o client Supabase no server action está ciente da sessão autenticada. Detalhe: ${error.message}` };
+    if (upsertError) {
+      console.error('ACTION_DB_ERROR: Supabase error updating site settings:', upsertError);
+      if (upsertError.message.includes('violates row-level security policy') || upsertError.message.includes('RLS')) {
+        return { success: false, message: `Erro ao salvar configurações: Violação da política de segurança a nível de linha (RLS) do banco de dados. Certifique-se de que as políticas RLS para a tabela 'site_settings' permitem que usuários autenticados (admin) insiram/atualizem a linha com id=${SETTINGS_ROW_ID}, e que o client Supabase no server action está ciente da sessão autenticada. Detalhe: ${upsertError.message}` };
       }
-      return { success: false, message: `Erro ao salvar configurações no banco de dados: ${error.message}` };
+      return { success: false, message: `Erro ao salvar configurações no banco de dados: ${upsertError.message}` };
     }
     
     if (!upsertedData) {
@@ -116,10 +144,10 @@ export async function updateSiteSettings(newSettings: SiteSettings): Promise<{ s
 
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error('Validation error updating site settings:', error.flatten());
+      console.error('ACTION_VALIDATION_ERROR: Validation error updating site settings:', error.flatten());
       return { success: false, message: 'Erro de validação: ' + error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ') };
     }
-    console.error('Unexpected error updating site settings:', error);
+    console.error('ACTION_UNEXPECTED_ERROR: Unexpected error updating site settings:', error);
     const errorMessage = error instanceof Error ? error.message : 'Ocorreu um erro desconhecido ao atualizar as configurações.';
     return { success: false, message: errorMessage };
   }
