@@ -1,7 +1,8 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Ainda pode ser útil para outros cenários, mas não para o redirect principal aqui
+import { useState, useEffect } from 'react'; // useEffect será comentado
+// import { useRouter } from 'next/navigation'; // Removido temporariamente
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,10 +21,11 @@ const loginSchema = z.object({
 type LoginFormInputs = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const router = useRouter(); // Mantido caso necessário para outras lógicas
+  // const router = useRouter(); // Removido temporariamente
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCheckingSession, setIsCheckingSession] = useState(true); 
+  // Inicia como false para que o loader não seja mostrado se o useEffect for removido.
+  const [isCheckingSession, setIsCheckingSession] = useState(false); 
 
   const {
     register,
@@ -33,14 +35,13 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
+  /*
   useEffect(() => {
     let didUnmount = false;
     console.log('LOGIN_PAGE_EFFECT: Iniciando verificação de sessão no cliente.');
   
     const checkSession = async () => {
       try {
-        // Não precisamos de `supabase.auth.onAuthStateChange` aqui pois o middleware e 
-        // `getSession` devem cuidar da sessão em mudanças de rota.
         const { data: { session }, error } = await supabase.auth.getSession();
   
         if (didUnmount) {
@@ -50,12 +51,10 @@ export default function LoginPage() {
   
         if (error) {
           console.error('LOGIN_PAGE_EFFECT: Erro ao obter sessão via supabase.auth.getSession():', error.message);
-          // Se houver erro, provavelmente não há sessão, então mostramos o form.
           setIsCheckingSession(false);
         } else if (session) {
           console.log('LOGIN_PAGE_EFFECT: Sessão encontrada no cliente. Redirecionando para /admin/dashboard via window.location.href.');
           // Força um full page reload para garantir que o middleware e o server-side state sejam atualizados.
-          // Isso é crucial se o middleware não estiver pegando a sessão após um router.replace().
           window.location.href = '/admin/dashboard';
           // Como estamos fazendo um full redirect, não precisamos chamar setIsCheckingSession(false) aqui,
           // pois o componente será desmontado.
@@ -82,6 +81,7 @@ export default function LoginPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Array de dependências vazio para rodar apenas uma vez na montagem.
+  */
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
     setIsSubmitting(true);
@@ -114,12 +114,16 @@ export default function LoginPage() {
     } finally {
       // Se o login falhar e não houver redirecionamento, garantimos que o botão seja reativado.
       // Se o login for bem-sucedido, o window.location.href fará o componente desmontar.
-      if (window.location.pathname === '/admin/login') { // Checa se ainda estamos na página de login
+      // Adicionada verificação para window para evitar erros de SSR se chamado em contexto errado.
+      if (typeof window !== 'undefined' && window.location.pathname === '/admin/login') { 
         setIsSubmitting(false);
       }
     }
   };
 
+  // Se isCheckingSession for true, mostra o loader.
+  // Como isCheckingSession agora é inicializado como false e o useEffect está comentado,
+  // este bloco não deve ser renderizado inicialmente.
   if (isCheckingSession) {
      return (
         <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background to-secondary/30">
