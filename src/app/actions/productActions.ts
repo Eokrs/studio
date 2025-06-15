@@ -23,6 +23,7 @@ console.log('PRODUCT ACTIONS FILE LOADED - Top Level Log');
 const getSupabaseAuthCookieName = () => {
   // This specific cookie name is based on previous logs from the user.
   // It should match 'sb-<project-ref>-auth-token'
+  // For user: drxttdahrbbhndcbnmzq
   return 'sb-drxttdahrbbhndcbnmzq-auth-token';
 };
 
@@ -124,19 +125,23 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
   }
 
   let supabase;
-  try {
-    supabase = createServerActionClient<Database>({ cookies }); // Pass the cookies function directly
-    console.log(`--- [deleteProduct Action] --- STEP 2: Supabase client created ---`);
-  } catch (clientError: any) {
-    console.error('--- [deleteProduct Action] --- CRITICAL ERROR: Failed to create Supabase client:', clientError.message, clientError.stack);
-    return { success: false, message: `Erro crítico ao inicializar cliente Supabase para deletar: ${clientError.message}` };
-  }
-  
-  const cookieStoreForLogging = cookies();
+  let cookieDebugMessage = "Cookie check not performed due to early exit or error.";
   const authCookieName = getSupabaseAuthCookieName();
-  const specificAuthCookie = cookieStoreForLogging.get(authCookieName);
-  const cookieDebugMessage = specificAuthCookie ? `Cookie '${authCookieName}' ENCONTRADO.` : `Cookie '${authCookieName}' NÃO ENCONTRADO.`;
-  console.log(`--- [deleteProduct Action] --- STEP 3: Cookie check: ${cookieDebugMessage}`);
+
+  try {
+    // IMPORTANT: Pass the cookies FUNCTION from next/headers
+    supabase = createServerActionClient<Database>({ cookies });
+    console.log(`--- [deleteProduct Action] --- STEP 2: Supabase client created ---`);
+
+    const cookieStoreForLogging = cookies(); // Call cookies() to get the store
+    const specificAuthCookie = cookieStoreForLogging.get(authCookieName);
+    cookieDebugMessage = specificAuthCookie ? `Cookie '${authCookieName}' ENCONTRADO (valor: ${specificAuthCookie.value.substring(0,15)}...).` : `Cookie '${authCookieName}' NÃO ENCONTRADO.`;
+    console.log(`--- [deleteProduct Action] --- STEP 3: Cookie check: ${cookieDebugMessage}`);
+
+  } catch (clientError: any) {
+    console.error('--- [deleteProduct Action] --- CRITICAL ERROR: Failed to create Supabase client or access cookies:', clientError.message, clientError.stack);
+    return { success: false, message: `Erro crítico ao inicializar cliente Supabase para deletar: ${clientError.message}. ${cookieDebugMessage}` };
+  }
   
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   console.log(`--- [deleteProduct Action] --- STEP 4: supabase.auth.getUser() CALLED ---`);
@@ -176,21 +181,28 @@ export async function updateProduct(productId: string, productData: ProductUpdat
   console.log("Product Data:", JSON.stringify(productData, null, 2));
 
   let supabase;
+  let cookieDebugMessage = "Cookie check not performed due to early exit or error.";
+  const authCookieName = getSupabaseAuthCookieName();
+
   try {
     // IMPORTANT: Pass the cookies FUNCTION from next/headers
     supabase = createServerActionClient<Database>({ cookies });
     console.log(`--- [updateProduct Action] --- STEP 2: Supabase client created ---`);
+
+    const cookieStore = cookies(); // Call cookies() to get the store
+    const specificAuthCookie = cookieStore.get(authCookieName);
+    cookieDebugMessage = specificAuthCookie ? `Cookie '${authCookieName}' ENCONTRADO.` : `Cookie '${authCookieName}' NÃO ENCONTRADO.`;
+    console.log(`--- [updateProduct Action] --- STEP 3: Cookie check: ${cookieDebugMessage}`);
+    
+    // For more detailed debugging of all cookies:
+    // const allCookies = cookieStore.getAll();
+    // console.log(`--- [updateProduct Action] --- All cookies available:`, JSON.stringify(allCookies.map(c => ({ name: c.name, value: c.value.substring(0,15) + '...' }))));
+
+
   } catch (clientError: any) {
-    console.error('--- [updateProduct Action] --- CRITICAL ERROR: Failed to create Supabase client:', clientError.message, clientError.stack);
-    return { success: false, message: `Erro crítico ao inicializar cliente Supabase: ${clientError.message}` };
+    console.error('--- [updateProduct Action] --- CRITICAL ERROR: Failed to create Supabase client or access cookies:', clientError.message, clientError.stack);
+    return { success: false, message: `Erro crítico ao inicializar cliente Supabase: ${clientError.message}. ${cookieDebugMessage}` };
   }
-
-  const cookieStore = cookies();
-  const authCookieName = getSupabaseAuthCookieName();
-  const specificAuthCookie = cookieStore.get(authCookieName);
-  const cookieDebugMessage = specificAuthCookie ? `Cookie '${authCookieName}' ENCONTRADO (valor: ${specificAuthCookie.value.substring(0,15)}...).` : `Cookie '${authCookieName}' NÃO ENCONTRADO.`;
-  console.log(`--- [updateProduct Action] --- STEP 3: Cookie check: ${cookieDebugMessage}`);
-
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   console.log(`--- [updateProduct Action] --- STEP 4: supabase.auth.getUser() CALLED ---`);
@@ -202,7 +214,8 @@ export async function updateProduct(productId: string, productData: ProductUpdat
 
   if (!user) {
     console.warn('--- [updateProduct Action] --- AUTH WARNING: No user object returned from supabase.auth.getUser() (but no authError).');
-    return { success: false, message: `Ação não autorizada (sem objeto usuário). ${cookieDebugMessage}` };
+    // This is the path that leads to the "Auth session missing!" if cookieDebugMessage shows "NÃO ENCONTRADO"
+    return { success: false, message: `Ação não autorizada. ${cookieDebugMessage} (Usuário não autenticado)` };
   }
 
   console.log('--- [updateProduct Action] --- AUTH SUCCESS: User object retrieved:', JSON.stringify(user, null, 2));
