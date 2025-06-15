@@ -21,11 +21,8 @@ console.log('PRODUCT ACTIONS FILE LOADED - Top Level Log');
 
 // Helper function to get the Supabase auth cookie name
 const getSupabaseAuthCookieName = () => {
-  // This specific cookie name is an example; yours might be different
-  // based on your Supabase project reference.
-  // You can find your project's reference in your Supabase dashboard URL (e.g., https://<project-ref>.supabase.co)
-  // The cookie name is usually sb-<project-ref>-auth-token
-  // For your project, it appears to be 'sb-drxttdahrbbhndcbnmzq-auth-token' based on logs
+  // This specific cookie name is based on previous logs from the user.
+  // It should match 'sb-<project-ref>-auth-token'
   return 'sb-drxttdahrbbhndcbnmzq-auth-token';
 };
 
@@ -118,23 +115,62 @@ export async function searchProductsByName(query: string): Promise<Product[]> {
 }
 
 export async function deleteProduct(productId: string): Promise<{ success: boolean; message?: string }> {
-  console.log("--- DELETE PRODUCT ACTION CALLED (Simplified Log) ---");
+  console.log(`--- [deleteProduct Action] --- STEP 1: Action Called ---`);
+  console.log(`Product ID for delete: ${productId}`);
   
   if (!productId) {
-    console.log("Delete Product: Product ID not provided.");
+    console.log("--- [deleteProduct Action] --- STEP ERROR: Product ID not provided.");
     return { success: false, message: "ID do produto não fornecido." };
   }
 
-  console.log(`Delete Product: Attempting to delete (mocked) product with ID: ${productId}`);
+  const cookieStoreForLogging = cookies();
+  const allCookiesForLogging = cookieStoreForLogging.getAll();
+  console.log(`--- [deleteProduct Action] --- STEP 2: All cookies from cookieStore:`, JSON.stringify(allCookiesForLogging, null, 2));
+
+  const authCookieName = getSupabaseAuthCookieName();
+  const specificAuthCookieForLogging = cookieStoreForLogging.get(authCookieName);
+  console.log(`--- [deleteProduct Action] --- STEP 3: Specific auth cookie '${authCookieName}':`, JSON.stringify(specificAuthCookieForLogging, null, 2));
+  
+  let supabase;
+  try {
+    supabase = createServerActionClient<Database>({ cookies }); // Pass the cookies function directly
+    console.log(`--- [deleteProduct Action] --- STEP 4: Supabase client created ---`);
+  } catch (clientError: any) {
+    console.error('--- [deleteProduct Action] --- CRITICAL ERROR: Failed to create Supabase client:', clientError.message, clientError.stack);
+    return { success: false, message: `Erro crítico ao inicializar cliente Supabase para deletar: ${clientError.message}` };
+  }
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  console.log(`--- [deleteProduct Action] --- STEP 5: supabase.auth.getUser() CALLED ---`);
+
+  if (authError) {
+    console.error('--- [deleteProduct Action] --- AUTH ERROR from supabase.auth.getUser():', JSON.stringify(authError, null, 2));
+    return { success: false, message: `Erro de autenticação ao deletar: ${authError.message}` };
+  }
+
+  if (!user) {
+    console.warn('--- [deleteProduct Action] --- AUTH WARNING: No user object returned (but no authError).');
+    return { success: false, message: "Ação não autorizada. Usuário não autenticado para deletar (no user object)." };
+  }
+  
+  console.log('--- [deleteProduct Action] --- AUTH SUCCESS: User object retrieved:', JSON.stringify(user, null, 2));
+  console.log("--- [deleteProduct Action] --- STEP 6: Authentication seems to have passed. Returning MOCKED success for database part for now.");
+  
   // Actual delete logic is still commented out for safety during debugging
-  // const supabase = createServerActionClient<Database>({ cookies });
-  // const { data: { user }, error: authError } = await supabase.auth.getUser();
-  // ... auth checks and delete operation ...
+  // const { error: deleteError } = await supabase
+  //   .from('products')
+  //   .delete()
+  //   .eq('id', productId);
+
+  // if (deleteError) {
+  //   console.error('--- [deleteProduct Action] --- DB ERROR: Supabase error deleting product:', deleteError);
+  //   return { success: false, message: `Erro ao deletar produto: ${deleteError.message}` };
+  // }
 
   revalidatePath('/admin/produtos');
   revalidatePath('/');
-  console.log("Delete Product: Mocked success.");
-  return { success: true, message: "Produto (supostamente) excluído com sucesso (teste de log)." };
+  // console.log("Delete Product: Mocked success."); // Replaced by detailed step
+  return { success: true, message: "Autenticação OK! Deleção do produto no banco de dados ainda está mockada." };
 }
 
 export async function updateProduct(productId: string, productData: ProductUpdateData): Promise<{ success: boolean; message?: string; product?: Product }> {
@@ -142,7 +178,7 @@ export async function updateProduct(productId: string, productData: ProductUpdat
   console.log(`Product ID: ${productId}`);
   console.log("Product Data:", JSON.stringify(productData, null, 2));
 
-  const cookieStoreForLogging = cookies(); // Call it for logging purposes
+  const cookieStoreForLogging = cookies(); 
   const allCookiesForLogging = cookieStoreForLogging.getAll();
   console.log(`--- [updateProduct Action] --- STEP 2: All cookies from cookieStore (for logging):`, JSON.stringify(allCookiesForLogging, null, 2));
 
@@ -152,7 +188,7 @@ export async function updateProduct(productId: string, productData: ProductUpdat
 
   let supabase;
   try {
-    // IMPORTANT: Pass the cookies FUNCTION from next/headers, not the instance cookies()
+    // IMPORTANT: Pass the cookies FUNCTION from next/headers
     supabase = createServerActionClient<Database>({ cookies });
     console.log(`--- [updateProduct Action] --- STEP 4: Supabase client created ---`);
   } catch (clientError: any) {
@@ -175,7 +211,7 @@ export async function updateProduct(productId: string, productData: ProductUpdat
 
   console.log('--- [updateProduct Action] --- AUTH SUCCESS: User object retrieved:', JSON.stringify(user, null, 2));
   
-  // The actual database update logic is still commented out.
+  // The actual database update logic is still commented out for now.
   // We first want to ensure authentication works.
   // If the logs above show a valid user, the next step will be to uncomment the database update.
   
@@ -195,3 +231,4 @@ export async function updateProduct(productId: string, productData: ProductUpdat
   };
 }
     
+
