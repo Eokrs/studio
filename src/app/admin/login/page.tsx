@@ -1,12 +1,12 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState /* useEffect */ } from 'react'; // useEffect comentado
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase'; // Uses createBrowserClient
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,8 +31,12 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [isCheckingSession, setIsCheckingSession] = useState(true); // Start true to show loader
+  // Inicializa isCheckingSession como false para exibir o formulário diretamente
+  const [isCheckingSession, setIsCheckingSession] = useState(false); 
 
+  console.log('LOGIN_PAGE_RENDER_TEST: LoginPage component está renderizando.');
+
+  /* useEffect comentado para evitar loop de redirecionamento
   useEffect(() => {
     console.log('LOGIN_PAGE_EFFECT: Running to check client-side session.');
     const checkClientSession = async () => {
@@ -40,21 +44,20 @@ export default function LoginPage() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           console.log('LOGIN_PAGE_EFFECT: Client-side session found. Redirecting to /admin/dashboard via window.location.href.');
-          window.location.href = '/admin/dashboard'; // Force full page navigation
-          // No need to setIsCheckingSession(false) here as the page will navigate away
+          window.location.href = '/admin/dashboard'; 
           return; 
         } else {
           console.log('LOGIN_PAGE_EFFECT: No client-side session found. Showing login form.');
-          setIsCheckingSession(false); // No session, allow form to show
         }
       } catch (e: any) {
         console.error('LOGIN_PAGE_EFFECT: Error checking client-side session:', e.message);
-        setIsCheckingSession(false); // Error occurred, allow form to show
+      } finally {
+        setIsCheckingSession(false); 
       }
     };
     checkClientSession();
-  }, []); // Empty dependency array ensures this runs once on mount
-
+  }, []); 
+  */
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -90,8 +93,8 @@ export default function LoginPage() {
           title: 'Login Bem-sucedido!',
           description: 'Você será redirecionado para o dashboard.',
         });
+        // Força uma navegação completa para o dashboard
         window.location.href = '/admin/dashboard';
-        // setIsLoggingIn(false) might not be reached if redirect happens quickly
       }
     } catch (e: any) {
       console.error('LOGIN_PAGE_SUBMIT: Exception during Supabase login attempt:', e.message);
@@ -105,7 +108,7 @@ export default function LoginPage() {
     }
   };
   
-  if (isCheckingSession) {
+  if (isCheckingSession) { // Este bloco agora não deve ser alcançado inicialmente
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -185,4 +188,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
