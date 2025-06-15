@@ -31,53 +31,47 @@ type AdminSettingsFormInputValues = {
   seoKeywordsString: string; // This is what the <Input> gives
 };
 
-// Zod schema for validating the form inputs.
+// Zod schema for validating the form INPUTS.
 // This schema's output type will be AdminSettingsFormInputValues.
+// The transformation to SiteSettings happens manually in onSubmit.
 const AdminSettingsFormInputSchema = z.object({
-  siteName: SiteSettingsSchema.shape.siteName, // Reuse validation from canonical SiteSettingsSchema
+  siteName: SiteSettingsSchema.shape.siteName,
   defaultSeoTitle: SiteSettingsSchema.shape.defaultSeoTitle,
   defaultSeoDescription: SiteSettingsSchema.shape.defaultSeoDescription,
   seoKeywordsString: z.string()
     .min(1, 'Forneça ao menos uma palavra-chave.') // Base validation for the input string
     .superRefine((val, ctx) => {
       const keywords = val.split(',').map(k => k.trim()).filter(k => k.length > 0);
-      
-      // Validate against the array count rule from SiteSettingsSchema.shape.seoKeywords
-      const arrayMinLengthRule = SiteSettingsSchema.shape.seoKeywords._def.checks.find(c => c.kind === 'min');
-      if (arrayMinLengthRule && keywords.length < (arrayMinLengthRule as { value: number }).value) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.too_small,
-          minimum: (arrayMinLengthRule as { value: number }).value,
-          type: "array", // conceptually, it's about the array of keywords
-          inclusive: true,
-          message: arrayMinLengthRule.message || `Deve haver pelo menos ${(arrayMinLengthRule as { value: number }).value} palavra(s)-chave.`,
-          path: ['seoKeywordsString']
-        });
-        return; // Stop if not enough keywords
-      }
-      if (keywords.length === 0 && !arrayMinLengthRule) { // Fallback if min rule not found or specific message desired
-         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Forneça ao menos uma palavra-chave válida.",
-          path: ['seoKeywordsString']
-        });
-        return;
-      }
-      
-      // Validate each individual keyword against the sub-schema from SiteSettingsSchema.shape.seoKeywords
-      const individualKeywordSchema = (SiteSettingsSchema.shape.seoKeywords as z.ZodArray<z.ZodString, "many">).element;
-      keywords.forEach(keyword => {
-        const validationResult = individualKeywordSchema.safeParse(keyword);
-        if (!validationResult.success) {
-          validationResult.error.issues.forEach(issue => {
-            ctx.addIssue({
-              ...issue, // Spread issue properties
-              message: `Palavra-chave "${keyword}": ${issue.message}`, // Custom message to identify the keyword
-              path: ['seoKeywordsString'] // Attribute all keyword errors to the seoKeywordsString input field
-            });
+
+      // Validate the generated array against the canonical schema for keywords
+      const arrayValidationResult = SiteSettingsSchema.shape.seoKeywords.safeParse(keywords);
+
+      if (!arrayValidationResult.success) {
+        arrayValidationResult.error.issues.forEach(issue => {
+          let message = issue.message;
+          // Customize message for array-level minimum length error
+          if (issue.path.length === 0 && issue.code === z.ZodIssueCode.too_small) {
+            message = `Deve haver pelo menos ${issue.minimum} palavra(s)-chave válida(s). Você forneceu ${keywords.length}.`;
+          } 
+          // Customize message for errors on individual keywords (e.g., too short)
+          else if (issue.path.length > 0) { 
+              const problematicKeywordIndex = issue.path[0] as number;
+              const problematicKeyword = keywords[problematicKeywordIndex];
+              if (issue.code === z.ZodIssueCode.too_short && typeof problematicKeyword === 'string') {
+                   message = `A palavra-chave "${problematicKeyword}" é muito curta. Deve ter pelo menos ${issue.minimum} caracteres.`;
+              } else if (typeof problematicKeyword === 'string') {
+                   message = `Palavra-chave "${problematicKeyword}": ${issue.message}`;
+              }
+          }
+          // For other types of errors, Zod's default 'issue.message' is usually fine.
+
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom, // Use custom to ensure the message is displayed as is
+            message: message,
+            path: ['seoKeywordsString'] // Attribute all errors to the seoKeywordsString input field
           });
-        }
-      });
+        });
+      }
     })
 });
 
@@ -88,9 +82,8 @@ export default function AdminConfiguracoesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialLoadError, setInitialLoadError] = useState<string | null>(null);
 
-  // useForm is typed with AdminSettingsFormInputValues (the shape of the form fields)
   const form = useForm<AdminSettingsFormInputValues>({ 
-    resolver: zodResolver(AdminSettingsFormInputSchema), // This schema validates AdminSettingsFormInputValues
+    resolver: zodResolver(AdminSettingsFormInputSchema),
     defaultValues: {
       siteName: '',
       defaultSeoTitle: '',
@@ -104,8 +97,7 @@ export default function AdminConfiguracoesPage() {
       setIsLoadingSettings(true);
       setInitialLoadError(null);
       try {
-        const settings: SiteSettings = await getSiteSettings(); // Fetches SiteSettings
-        // Reset form with AdminSettingsFormInputValues, converting array to string
+        const settings: SiteSettings = await getSiteSettings();
         form.reset({ 
           siteName: settings.siteName,
           defaultSeoTitle: settings.defaultSeoTitle,
@@ -137,14 +129,13 @@ export default function AdminConfiguracoesPage() {
     };
 
     try {
-      const result = await updateSiteSettings(settingsToSave); // Pass SiteSettings object
+      const result = await updateSiteSettings(settingsToSave);
       
       if (result.success && result.settings) {
         toast({
           title: "Sucesso!",
           description: result.message,
         });
-        // Reset form with AdminSettingsFormInputValues, converting array back to string
         form.reset({
           siteName: result.settings.siteName,
           defaultSeoTitle: result.settings.defaultSeoTitle,
@@ -339,6 +330,4 @@ export default function AdminConfiguracoesPage() {
     </div>
   );
 }
-    
-
     
