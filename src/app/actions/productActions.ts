@@ -123,54 +123,51 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
     return { success: false, message: "ID do produto não fornecido." };
   }
 
-  const cookieStoreForLogging = cookies();
-  const allCookiesForLogging = cookieStoreForLogging.getAll();
-  console.log(`--- [deleteProduct Action] --- STEP 2: All cookies from cookieStore:`, JSON.stringify(allCookiesForLogging, null, 2));
-
-  const authCookieName = getSupabaseAuthCookieName();
-  const specificAuthCookieForLogging = cookieStoreForLogging.get(authCookieName);
-  console.log(`--- [deleteProduct Action] --- STEP 3: Specific auth cookie '${authCookieName}':`, JSON.stringify(specificAuthCookieForLogging, null, 2));
-  
   let supabase;
   try {
     supabase = createServerActionClient<Database>({ cookies }); // Pass the cookies function directly
-    console.log(`--- [deleteProduct Action] --- STEP 4: Supabase client created ---`);
+    console.log(`--- [deleteProduct Action] --- STEP 2: Supabase client created ---`);
   } catch (clientError: any) {
     console.error('--- [deleteProduct Action] --- CRITICAL ERROR: Failed to create Supabase client:', clientError.message, clientError.stack);
     return { success: false, message: `Erro crítico ao inicializar cliente Supabase para deletar: ${clientError.message}` };
   }
-
+  
+  const cookieStoreForLogging = cookies();
+  const authCookieName = getSupabaseAuthCookieName();
+  const specificAuthCookie = cookieStoreForLogging.get(authCookieName);
+  const cookieDebugMessage = specificAuthCookie ? `Cookie '${authCookieName}' ENCONTRADO.` : `Cookie '${authCookieName}' NÃO ENCONTRADO.`;
+  console.log(`--- [deleteProduct Action] --- STEP 3: Cookie check: ${cookieDebugMessage}`);
+  
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  console.log(`--- [deleteProduct Action] --- STEP 5: supabase.auth.getUser() CALLED ---`);
+  console.log(`--- [deleteProduct Action] --- STEP 4: supabase.auth.getUser() CALLED ---`);
 
   if (authError) {
     console.error('--- [deleteProduct Action] --- AUTH ERROR from supabase.auth.getUser():', JSON.stringify(authError, null, 2));
-    return { success: false, message: `Erro de autenticação ao deletar: ${authError.message}` };
+    return { success: false, message: `Erro de autenticação ao deletar. ${cookieDebugMessage} Detalhe: ${authError.message}` };
   }
 
   if (!user) {
     console.warn('--- [deleteProduct Action] --- AUTH WARNING: No user object returned (but no authError).');
-    return { success: false, message: "Ação não autorizada. Usuário não autenticado para deletar (no user object)." };
+    return { success: false, message: `Ação não autorizada. Usuário não autenticado para deletar (no user object). ${cookieDebugMessage}` };
   }
   
   console.log('--- [deleteProduct Action] --- AUTH SUCCESS: User object retrieved:', JSON.stringify(user, null, 2));
-  console.log("--- [deleteProduct Action] --- STEP 6: Authentication seems to have passed. Returning MOCKED success for database part for now.");
+  console.log("--- [deleteProduct Action] --- STEP 5: Authentication seems to have passed. Deleting product...");
   
-  // Actual delete logic is still commented out for safety during debugging
-  // const { error: deleteError } = await supabase
-  //   .from('products')
-  //   .delete()
-  //   .eq('id', productId);
+  const { error: deleteError } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', productId);
 
-  // if (deleteError) {
-  //   console.error('--- [deleteProduct Action] --- DB ERROR: Supabase error deleting product:', deleteError);
-  //   return { success: false, message: `Erro ao deletar produto: ${deleteError.message}` };
-  // }
+  if (deleteError) {
+    console.error('--- [deleteProduct Action] --- DB ERROR: Supabase error deleting product:', deleteError);
+    return { success: false, message: `Erro ao deletar produto: ${deleteError.message}` };
+  }
 
   revalidatePath('/admin/produtos');
   revalidatePath('/');
-  // console.log("Delete Product: Mocked success."); // Replaced by detailed step
-  return { success: true, message: "Autenticação OK! Deleção do produto no banco de dados ainda está mockada." };
+  console.log("--- [deleteProduct Action] --- STEP 6: Product deleted successfully.");
+  return { success: true, message: "Produto excluído com sucesso!" };
 }
 
 export async function updateProduct(productId: string, productData: ProductUpdateData): Promise<{ success: boolean; message?: string; product?: Product }> {
@@ -178,57 +175,65 @@ export async function updateProduct(productId: string, productData: ProductUpdat
   console.log(`Product ID: ${productId}`);
   console.log("Product Data:", JSON.stringify(productData, null, 2));
 
-  const cookieStoreForLogging = cookies(); 
-  const allCookiesForLogging = cookieStoreForLogging.getAll();
-  console.log(`--- [updateProduct Action] --- STEP 2: All cookies from cookieStore (for logging):`, JSON.stringify(allCookiesForLogging, null, 2));
-
-  const authCookieName = getSupabaseAuthCookieName();
-  const specificAuthCookieDirectForLogging = cookieStoreForLogging.get(authCookieName);
-  console.log(`--- [updateProduct Action] --- STEP 3: Specific auth cookie '${authCookieName}' (direct get for logging):`, JSON.stringify(specificAuthCookieDirectForLogging, null, 2));
-
   let supabase;
   try {
     // IMPORTANT: Pass the cookies FUNCTION from next/headers
     supabase = createServerActionClient<Database>({ cookies });
-    console.log(`--- [updateProduct Action] --- STEP 4: Supabase client created ---`);
+    console.log(`--- [updateProduct Action] --- STEP 2: Supabase client created ---`);
   } catch (clientError: any) {
     console.error('--- [updateProduct Action] --- CRITICAL ERROR: Failed to create Supabase client:', clientError.message, clientError.stack);
     return { success: false, message: `Erro crítico ao inicializar cliente Supabase: ${clientError.message}` };
   }
 
+  const cookieStore = cookies();
+  const authCookieName = getSupabaseAuthCookieName();
+  const specificAuthCookie = cookieStore.get(authCookieName);
+  const cookieDebugMessage = specificAuthCookie ? `Cookie '${authCookieName}' ENCONTRADO (valor: ${specificAuthCookie.value.substring(0,15)}...).` : `Cookie '${authCookieName}' NÃO ENCONTRADO.`;
+  console.log(`--- [updateProduct Action] --- STEP 3: Cookie check: ${cookieDebugMessage}`);
+
+
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  console.log(`--- [updateProduct Action] --- STEP 5: supabase.auth.getUser() CALLED ---`);
+  console.log(`--- [updateProduct Action] --- STEP 4: supabase.auth.getUser() CALLED ---`);
 
   if (authError) {
     console.error('--- [updateProduct Action] --- AUTH ERROR from supabase.auth.getUser():', JSON.stringify(authError, null, 2));
-    return { success: false, message: `Erro de autenticação ao atualizar: ${authError.message}` };
+    return { success: false, message: `Erro de autenticação. ${cookieDebugMessage} Detalhe: ${authError.message}` };
   }
 
   if (!user) {
     console.warn('--- [updateProduct Action] --- AUTH WARNING: No user object returned from supabase.auth.getUser() (but no authError).');
-    return { success: false, message: "Ação não autorizada. Usuário não autenticado (no user object)." };
+    return { success: false, message: `Ação não autorizada (sem objeto usuário). ${cookieDebugMessage}` };
   }
 
   console.log('--- [updateProduct Action] --- AUTH SUCCESS: User object retrieved:', JSON.stringify(user, null, 2));
+  console.log("--- [updateProduct Action] --- STEP 5: Authentication passed. Updating product in database...");
   
-  // The actual database update logic is still commented out for now.
-  // We first want to ensure authentication works.
-  // If the logs above show a valid user, the next step will be to uncomment the database update.
+  const { data: updatedProductData, error: updateError } = await supabase
+    .from('products')
+    .update(productData)
+    .eq('id', productId)
+    .select()
+    .single();
+
+  if (updateError) {
+    console.error('--- [updateProduct Action] --- DB ERROR: Supabase error updating product:', updateError);
+    return { success: false, message: `Erro ao atualizar produto no banco de dados: ${updateError.message}` };
+  }
   
-  console.log("--- [updateProduct Action] --- STEP 6: Authentication seems to have passed. Returning MOCKED success for database part for now.");
+  if (!updatedProductData) {
+    console.error('--- [updateProduct Action] --- DB ERROR: No data returned after product update.');
+    return { success: false, message: 'Nenhum dado retornado após a atualização do produto.'};
+  }
+
+  revalidatePath('/admin/produtos');
+  revalidatePath(`/admin/produtos/edit/${productId}`);
+  revalidatePath('/'); 
+
+  console.log("--- [updateProduct Action] --- STEP 6: Product updated successfully in database.");
   return { 
     success: true, 
-    message: "Autenticação OK! Atualização do produto no banco de dados ainda está mockada.",
-    product: { // Return some mock product data
-      id: productId,
-      name: typeof productData.name === 'string' ? productData.name : "Nome Teste Pós-Auth",
-      description: typeof productData.description === 'string' ? productData.description : "Descrição Teste Pós-Auth",
-      image: typeof productData.image === 'string' ? productData.image : "img-post-auth.png",
-      category: typeof productData.category === 'string' ? productData.category : "Cat Teste Pós-Auth",
-      is_active: typeof productData.is_active === 'boolean' ? productData.is_active : true,
-      created_at: new Date().toISOString(),
-    }
+    message: "Produto atualizado com sucesso!",
+    product: updatedProductData as Product
   };
 }
     
-
