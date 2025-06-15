@@ -1,7 +1,6 @@
 
 'use client'; // Componentes de erro DEVEM ser Componentes Cliente
 
-import type { ErrorInfo } from 'react';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RotateCcw, Home } from 'lucide-react';
@@ -15,7 +14,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     // Logar o erro para um serviço de reporte de erros
-    console.error("GlobalError capturou:", error);
+    console.error("GlobalError capturou:", error, "Digest:", error.digest);
   }, [error]);
 
   return (
@@ -30,6 +29,7 @@ export default function GlobalError({
       {error?.message && (
         <p className="text-sm text-destructive/80 bg-destructive/10 p-3 rounded-md mb-8 max-w-xl mx-auto">
           <strong>Detalhe do erro:</strong> {error.message}
+          {error.digest && <span className="block mt-1 text-xs">Digest: {error.digest}</span>}
         </p>
       )}
       <div className="flex flex-col sm:flex-row gap-4">
