@@ -23,7 +23,7 @@ import { getSiteSettings, updateSiteSettings } from '@/app/actions/settingsActio
 import { SiteSettingsSchema, type SiteSettings } from '@/types/settings';
 import { ArrowLeft, Settings, Image as ImageIcon, ExternalLink, ShieldCheck, Construction, Save, Loader2, AlertTriangle } from 'lucide-react';
 
-// Type for the form's direct input values
+// Type for the form's direct input values (what react-hook-form manages)
 type AdminSettingsFormInputValues = {
   siteName: string;
   defaultSeoTitle: string;
@@ -31,41 +31,55 @@ type AdminSettingsFormInputValues = {
   seoKeywordsString: string; // This is what the <Input> gives
 };
 
-// Zod schema for validating form inputs and transforming to SiteSettings
-const adminSettingsFormSchema = z.object({
-  siteName: SiteSettingsSchema.shape.siteName,
+// Zod schema for validating the form inputs.
+// This schema's output type will be AdminSettingsFormInputValues.
+const AdminSettingsFormInputSchema = z.object({
+  siteName: SiteSettingsSchema.shape.siteName, // Reuse validation from canonical SiteSettingsSchema
   defaultSeoTitle: SiteSettingsSchema.shape.defaultSeoTitle,
   defaultSeoDescription: SiteSettingsSchema.shape.defaultSeoDescription,
-  seoKeywordsString: z.string().min(1, 'Forneça ao menos uma palavra-chave.')
-    .superRefine((val, ctx) => { // val here is string from input
+  seoKeywordsString: z.string()
+    .min(1, 'Forneça ao menos uma palavra-chave.') // Base validation for the input string
+    .superRefine((val, ctx) => {
       const keywords = val.split(',').map(k => k.trim()).filter(k => k.length > 0);
-      if (keywords.length === 0) {
+      
+      // Validate against the array count rule from SiteSettingsSchema.shape.seoKeywords
+      const arrayMinLengthRule = SiteSettingsSchema.shape.seoKeywords._def.checks.find(c => c.kind === 'min');
+      if (arrayMinLengthRule && keywords.length < (arrayMinLengthRule as { value: number }).value) {
         ctx.addIssue({
+          code: z.ZodIssueCode.too_small,
+          minimum: (arrayMinLengthRule as { value: number }).value,
+          type: "array", // conceptually, it's about the array of keywords
+          inclusive: true,
+          message: arrayMinLengthRule.message || `Deve haver pelo menos ${(arrayMinLengthRule as { value: number }).value} palavra(s)-chave.`,
+          path: ['seoKeywordsString']
+        });
+        return; // Stop if not enough keywords
+      }
+      if (keywords.length === 0 && !arrayMinLengthRule) { // Fallback if min rule not found or specific message desired
+         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Forneça ao menos uma palavra-chave válida.",
           path: ['seoKeywordsString']
         });
+        return;
       }
+      
+      // Validate each individual keyword against the sub-schema from SiteSettingsSchema.shape.seoKeywords
+      const individualKeywordSchema = (SiteSettingsSchema.shape.seoKeywords as z.ZodArray<z.ZodString, "many">).element;
       keywords.forEach(keyword => {
-        if (keyword.length < 2) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `Palavra-chave "${keyword}" é muito curta. Mínimo 2 caracteres.`,
-            path: ['seoKeywordsString']
+        const validationResult = individualKeywordSchema.safeParse(keyword);
+        if (!validationResult.success) {
+          validationResult.error.issues.forEach(issue => {
+            ctx.addIssue({
+              ...issue, // Spread issue properties
+              message: `Palavra-chave "${keyword}": ${issue.message}`, // Custom message to identify the keyword
+              path: ['seoKeywordsString'] // Attribute all keyword errors to the seoKeywordsString input field
+            });
           });
         }
       });
     })
-}).transform(validatedInputData => {
-  // validatedInputData is { siteName, defaultSeoTitle, defaultSeoDescription, seoKeywordsString }
-  return {
-    siteName: validatedInputData.siteName,
-    defaultSeoTitle: validatedInputData.defaultSeoTitle,
-    defaultSeoDescription: validatedInputData.defaultSeoDescription,
-    seoKeywords: validatedInputData.seoKeywordsString.split(',').map(k => k.trim()).filter(k => k.length > 0)
-  };
 });
-// The output type of this schema is SiteSettings.
 
 
 export default function AdminConfiguracoesPage() {
@@ -74,13 +88,14 @@ export default function AdminConfiguracoesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialLoadError, setInitialLoadError] = useState<string | null>(null);
 
-  const form = useForm<AdminSettingsFormInputValues>({ // Use the input type here
-    resolver: zodResolver(adminSettingsFormSchema), // This schema transforms to SiteSettings
+  // useForm is typed with AdminSettingsFormInputValues (the shape of the form fields)
+  const form = useForm<AdminSettingsFormInputValues>({ 
+    resolver: zodResolver(AdminSettingsFormInputSchema), // This schema validates AdminSettingsFormInputValues
     defaultValues: {
       siteName: '',
       defaultSeoTitle: '',
       defaultSeoDescription: '',
-      seoKeywordsString: '', // String for the input
+      seoKeywordsString: '',
     },
   });
 
@@ -89,12 +104,13 @@ export default function AdminConfiguracoesPage() {
       setIsLoadingSettings(true);
       setInitialLoadError(null);
       try {
-        const settings = await getSiteSettings();
-        form.reset({ // Reset with AdminSettingsFormInputValues
+        const settings: SiteSettings = await getSiteSettings(); // Fetches SiteSettings
+        // Reset form with AdminSettingsFormInputValues, converting array to string
+        form.reset({ 
           siteName: settings.siteName,
           defaultSeoTitle: settings.defaultSeoTitle,
           defaultSeoDescription: settings.defaultSeoDescription,
-          seoKeywordsString: settings.seoKeywords.join(', '), // Convert array back to string for input
+          seoKeywordsString: settings.seoKeywords.join(', '), 
         });
       } catch (error) {
         console.error("Failed to load site settings:", error);
@@ -108,19 +124,27 @@ export default function AdminConfiguracoesPage() {
     fetchSettings();
   }, [form, toast]);
 
-  // The data received here is already transformed to SiteSettings by zodResolver
-  const onSubmit: SubmitHandler<SiteSettings> = async (transformedData) => {
+  // onSubmit receives AdminSettingsFormInputValues (validated form data)
+  const onSubmit: SubmitHandler<AdminSettingsFormInputValues> = async (formData) => {
     setIsSubmitting(true);
+    
+    // Transform formData (AdminSettingsFormInputValues) to SiteSettings
+    const settingsToSave: SiteSettings = {
+      siteName: formData.siteName,
+      defaultSeoTitle: formData.defaultSeoTitle,
+      defaultSeoDescription: formData.defaultSeoDescription,
+      seoKeywords: formData.seoKeywordsString.split(',').map(k => k.trim()).filter(k => k.length > 0),
+    };
+
     try {
-      // transformedData is already in the SiteSettings shape
-      const result = await updateSiteSettings(transformedData);
+      const result = await updateSiteSettings(settingsToSave); // Pass SiteSettings object
       
       if (result.success && result.settings) {
         toast({
           title: "Sucesso!",
           description: result.message,
         });
-        // Reset form with AdminSettingsFormInputValues, converting array back to string for input
+        // Reset form with AdminSettingsFormInputValues, converting array back to string
         form.reset({
           siteName: result.settings.siteName,
           defaultSeoTitle: result.settings.defaultSeoTitle,
@@ -315,4 +339,6 @@ export default function AdminConfiguracoesPage() {
     </div>
   );
 }
+    
+
     
