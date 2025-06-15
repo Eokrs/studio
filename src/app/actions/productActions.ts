@@ -16,6 +16,17 @@ import type { Database } from '@/lib/supabase';
 import type { Product, ProductUpdateData } from '@/data/products';
 import { revalidatePath } from 'next/cache';
 
+// Helper function to get the Supabase auth cookie name
+// Replace 'YOUR_SUPABASE_PROJECT_REF' with your actual project reference if it's static
+// or ensure NEXT_PUBLIC_SUPABASE_PROJECT_REF is available if needed (though for direct key name it's usually static)
+const getSupabaseAuthCookieName = () => {
+  // The user's image showed: sb-drxttdahrbbhndcbnmzq-auth-token
+  // This part "drxttdahrbbhndcbnmzq" is the project reference.
+  // For this example, I'll use the literal string from the image.
+  // In a real scenario, you might construct this if you had the project ref in an env var.
+  return 'sb-drxttdahrbbhndcbnmzq-auth-token';
+};
+
 export async function getProducts(options?: { limit?: number; offset?: number }): Promise<Product[]> {
   const supabase = createServerActionClient<Database>({ cookies });
   const { limit = 20, offset = 0 } = options || {};
@@ -105,6 +116,13 @@ export async function searchProductsByName(query: string): Promise<Product[]> {
 }
 
 export async function deleteProduct(productId: string): Promise<{ success: boolean; message?: string }> {
+  const cookieStore = cookies();
+  const authCookieName = getSupabaseAuthCookieName();
+  const supabaseAuthTokenCookie = cookieStore.get(authCookieName);
+  console.log(`[deleteProduct Action] Value of cookie ${authCookieName}:`, supabaseAuthTokenCookie ? { value: supabaseAuthTokenCookie.value.substring(0, 20) + '...', name: supabaseAuthTokenCookie.name, path: supabaseAuthTokenCookie.path } : undefined);
+  // console.log('[deleteProduct Action] All cookies:', cookieStore.getAll().map(c => ({name: c.name, value: c.value.substring(0,10) + '...'})));
+
+
   const supabase = createServerActionClient<Database>({ cookies });
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -138,11 +156,18 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
 }
 
 export async function updateProduct(productId: string, productData: ProductUpdateData): Promise<{ success: boolean; message?: string; product?: Product }> {
+  const cookieStore = cookies();
+  const authCookieName = getSupabaseAuthCookieName();
+  const supabaseAuthTokenCookie = cookieStore.get(authCookieName);
+  console.log(`[updateProduct Action] Value of cookie ${authCookieName}:`, supabaseAuthTokenCookie ? { value: supabaseAuthTokenCookie.value.substring(0, 20) + '...', name: supabaseAuthTokenCookie.name, path: supabaseAuthTokenCookie.path } : undefined);
+  // console.log('[updateProduct Action] All cookies:', cookieStore.getAll().map(c => ({name: c.name, value: c.value.substring(0,10) + '...'})));
+
+
   const supabase = createServerActionClient<Database>({ cookies });
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError) {
-    console.error('Error getting user in updateProduct server action:', authError);
+    console.error('Error getting user in updateProduct server action:', authError); // This log is important
     return { success: false, message: `Erro de autenticação ao atualizar: ${authError.message}` };
   }
 
