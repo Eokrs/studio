@@ -16,10 +16,10 @@ import type { Database } from '@/lib/supabase';
 import type { Product, ProductUpdateData } from '@/data/products';
 import { revalidatePath } from 'next/cache';
 
+console.log('PRODUCT ACTIONS FILE LOADED - Top Level Log'); // Top-level log
+
 // Helper function to get the Supabase auth cookie name
 const getSupabaseAuthCookieName = () => {
-  // The user's image showed: sb-drxttdahrbbhndcbnmzq-auth-token
-  // This part "drxttdahrbbhndcbnmzq" is the project reference.
   return 'sb-drxttdahrbbhndcbnmzq-auth-token';
 };
 
@@ -75,7 +75,7 @@ export async function getCategories(): Promise<string[]> {
   const { data, error } = await supabase
     .from('products')
     .select('category')
-    .eq('is_active', true); // Assuming categories should only be from active products
+    .eq('is_active', true); 
 
   if (error) {
     console.error('Supabase error fetching categories:', error);
@@ -98,7 +98,7 @@ export async function searchProductsByName(query: string): Promise<Product[]> {
 
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, description, image, category, is_active, created_at') // Added is_active and created_at for consistency
+    .select('id, name, description, image, category, is_active, created_at') 
     .ilike('name', `%${query}%`)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
@@ -106,121 +106,118 @@ export async function searchProductsByName(query: string): Promise<Product[]> {
 
   if (error) {
     console.error('Supabase search error:', error);
-    return []; 
+    return [];
   }
   return data as Product[] || [];
 }
 
 export async function deleteProduct(productId: string): Promise<{ success: boolean; message?: string }> {
-  const cookieStore = cookies();
-  const authCookieName = getSupabaseAuthCookieName();
+  console.log("--- DELETE PRODUCT ACTION CALLED (Simplified Log) ---");
   
-  console.log('--- [deleteProduct Action] ---');
-  console.log('Attempting to read all cookies in deleteProduct:');
-  try {
-    const allCookies = cookieStore.getAll();
-    console.log('All cookies available to deleteProduct:', allCookies.map(c => ({ name: c.name, value: c.value.substring(0, 20) + '...' })));
-    const supabaseAuthTokenCookie = allCookies.find(c => c.name === authCookieName);
-    console.log(`Value of specific cookie ${authCookieName} (from getAll):`, supabaseAuthTokenCookie ? { value: supabaseAuthTokenCookie.value.substring(0, 20) + '...', name: supabaseAuthTokenCookie.name } : 'NOT FOUND in getAll()');
-  } catch (e) {
-    console.error('Error trying to log all cookies in deleteProduct:', e);
-  }
-  
-  const supabaseAuthTokenDirectGet = cookieStore.get(authCookieName);
-  console.log(`Value of specific cookie ${authCookieName} (from direct get()):`, supabaseAuthTokenDirectGet ? { value: supabaseAuthTokenDirectGet.value.substring(0, 20) + '...', name: supabaseAuthTokenDirectGet.name, path: supabaseAuthTokenDirectGet.path } : 'NOT FOUND with direct get()');
+  // Temporarily bypassing auth for delete to check if logs appear
+  // const supabase = createServerActionClient<Database>({ cookies });
+  // const { data: { user }, error: authError } = await supabase.auth.getUser();
 
+  // if (authError) {
+  //   console.error('Error getting user in deleteProduct server action:', authError);
+  //   return { success: false, message: `Erro de autenticação ao excluir: ${authError.message}` };
+  // }
 
-  const supabase = createServerActionClient<Database>({ cookies });
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-  if (authError) {
-    console.error('Error getting user in deleteProduct server action:', authError);
-    return { success: false, message: `Erro de autenticação ao excluir: ${authError.message}` };
-  }
-
-  if (!user) {
-    console.warn('No user found in deleteProduct server action (no authError).');
-    return { success: false, message: "Ação não autorizada. Usuário não autenticado." };
-  }
+  // if (!user) {
+  //   console.warn('No user found in deleteProduct server action (no authError).');
+  //   return { success: false, message: "Ação não autorizada. Usuário não autenticado." };
+  // }
 
   if (!productId) {
+    console.log("Delete Product: Product ID not provided.");
     return { success: false, message: "ID do produto não fornecido." };
   }
 
-  const { error } = await supabase
-    .from('products')
-    .delete()
-    .eq('id', productId);
+  console.log(`Delete Product: Attempting to delete (mocked) product with ID: ${productId}`);
+  // const { error } = await supabase
+  //   .from('products')
+  //   .delete()
+  //   .eq('id', productId);
 
-  if (error) {
-    console.error('Supabase error deleting product:', error);
-    return { success: false, message: `Erro ao excluir produto: ${error.message}. Verifique os logs do servidor e as políticas RLS.` };
-  }
+  // if (error) {
+  //   console.error('Supabase error deleting product:', error);
+  //   return { success: false, message: `Erro ao excluir produto: ${error.message}. Verifique os logs do servidor e as políticas RLS.` };
+  // }
 
   revalidatePath('/admin/produtos');
   revalidatePath('/');
-  return { success: true, message: "Produto excluído com sucesso." };
+  console.log("Delete Product: Mocked success.");
+  return { success: true, message: "Produto (supostamente) excluído com sucesso (teste de log)." };
 }
 
 export async function updateProduct(productId: string, productData: ProductUpdateData): Promise<{ success: boolean; message?: string; product?: Product }> {
-  const cookieStore = cookies();
-  const authCookieName = getSupabaseAuthCookieName();
+  console.log("--- UPDATE PRODUCT ACTION CALLED (EXTREMELY SIMPLIFIED) ---");
+  console.log(`Product ID: ${productId}`);
+  console.log("Product Data:", productData);
 
-  console.log('--- [updateProduct Action] ---');
-  console.log('Attempting to read all cookies in updateProduct:');
-  try {
-    const allCookies = cookieStore.getAll();
-    console.log('All cookies available to updateProduct:', allCookies.map(c => ({ name: c.name, value: c.value.substring(0, 20) + '...' })));
-    const supabaseAuthTokenCookie = allCookies.find(c => c.name === authCookieName);
-    console.log(`Value of specific cookie ${authCookieName} (from getAll):`, supabaseAuthTokenCookie ? { value: supabaseAuthTokenCookie.value.substring(0, 20) + '...', name: supabaseAuthTokenCookie.name } : 'NOT FOUND in getAll()');
-  } catch (e) {
-    console.error('Error trying to log all cookies in updateProduct:', e);
-  }
-
-  const supabaseAuthTokenDirectGet = cookieStore.get(authCookieName);
-  console.log(`Value of specific cookie ${authCookieName} (from direct get()):`, supabaseAuthTokenDirectGet ? { value: supabaseAuthTokenDirectGet.value.substring(0, 20) + '...', name: supabaseAuthTokenDirectGet.name, path: supabaseAuthTokenDirectGet.path } : 'NOT FOUND with direct get()');
-
-
-  const supabase = createServerActionClient<Database>({ cookies });
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-  if (authError) {
-    console.error('Error getting user in updateProduct server action:', authError); // This log is important
-    return { success: false, message: `Erro de autenticação ao atualizar: ${authError.message}` };
-  }
-
-  if (!user) {
-    console.warn('No user found in updateProduct server action (no authError).');
-    return { success: false, message: "Ação não autorizada. Usuário não autenticado." };
-  }
-
+  // MOCKED RESPONSE - NO DATABASE INTERACTION OR AUTH CHECK
   if (!productId) {
-    return { success: false, message: "ID do produto não fornecido." };
+    console.log("Update Product: Product ID was not provided to simplified action.");
+    return { success: false, message: "ID do produto não fornecido (teste de log)." };
   }
-
-  const updateData = Object.fromEntries(
-    Object.entries(productData).filter(([_, v]) => v !== undefined)
-  );
   
-  if (Object.keys(updateData).length === 0) {
-     return { success: false, message: "Nenhum dado fornecido para atualização." };
-  }
+  console.log("Update Product: Returning MOCKED success for logging test.");
+  return { 
+    success: true, 
+    message: "Produto (supostamente) atualizado com sucesso (teste de log).",
+    product: {
+      id: productId,
+      name: typeof productData.name === 'string' ? productData.name : "Nome Teste",
+      description: typeof productData.description === 'string' ? productData.description : "Descrição Teste",
+      image: typeof productData.image === 'string' ? productData.image : "img.png",
+      category: typeof productData.category === 'string' ? productData.category : "Cat Teste",
+      is_active: typeof productData.is_active === 'boolean' ? productData.is_active : true,
+      created_at: new Date().toISOString(),
+    }
+  };
 
-  const { data, error } = await supabase
-    .from('products')
-    .update(updateData)
-    .eq('id', productId)
-    .select('id, name, description, image, category, is_active, created_at')
-    .single();
+  // Original logic commented out for extreme simplification:
+  // const supabase = createServerActionClient<Database>({ cookies });
+  // const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  if (error) {
-    console.error('Supabase error updating product:', error);
-    return { success: false, message: `Erro ao atualizar produto: ${error.message}. Verifique os logs do servidor e as políticas RLS.` };
-  }
+  // if (authError) {
+  //   console.error('Error getting user in updateProduct server action:', authError); 
+  //   return { success: false, message: `Erro de autenticação ao atualizar: ${authError.message}` };
+  // }
 
-  revalidatePath('/admin/produtos');
-  revalidatePath(`/admin/produtos/edit/${productId}`);
-  revalidatePath('/'); 
+  // if (!user) {
+  //   console.warn('No user found in updateProduct server action (no authError).');
+  //   return { success: false, message: "Ação não autorizada. Usuário não autenticado." };
+  // }
 
-  return { success: true, message: "Produto atualizado com sucesso.", product: data as Product };
+  // if (!productId) {
+  //   return { success: false, message: "ID do produto não fornecido." };
+  // }
+
+  // const updateDataToDb = Object.fromEntries(
+  //   Object.entries(productData).filter(([_, v]) => v !== undefined)
+  // );
+  
+  // if (Object.keys(updateDataToDb).length === 0) {
+  //    return { success: false, message: "Nenhum dado fornecido para atualização." };
+  // }
+
+  // const { data, error } = await supabase
+  //   .from('products')
+  //   .update(updateDataToDb)
+  //   .eq('id', productId)
+  //   .select('id, name, description, image, category, is_active, created_at')
+  //   .single();
+
+  // if (error) {
+  //   console.error('Supabase error updating product:', error);
+  //   return { success: false, message: `Erro ao atualizar produto: ${error.message}. Verifique os logs do servidor e as políticas RLS.` };
+  // }
+
+  // revalidatePath('/admin/produtos');
+  // revalidatePath(`/admin/produtos/edit/${productId}`);
+  // revalidatePath('/'); 
+
+  // return { success: true, message: "Produto atualizado com sucesso.", product: data as Product };
 }
+    
