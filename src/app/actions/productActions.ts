@@ -11,7 +11,7 @@
  * - updateProduct - Updates an existing product.
  */
 import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers'; // Import the cookies function
+import { cookies } from 'next/headers'; 
 import type { Database } from '@/lib/supabase';
 import type { Product, ProductUpdateData } from '@/data/products';
 import { revalidatePath } from 'next/cache';
@@ -20,22 +20,20 @@ import { revalidatePath } from 'next/cache';
 console.log('PRODUCT ACTIONS FILE LOADED - Top Level Log');
 
 // Helper function to get the Supabase auth cookie name
-// This might not be strictly necessary if Supabase Auth Helpers handle it all.
 const getSupabaseAuthCookieName = () => {
-  // This specific cookie name is based on previous logs from the user.
-  // It should match 'sb-<project-ref>-auth-token'
   const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.split('.')[0].replace('https://', '');
   if (!projectRef) {
-    console.warn('[getSupabaseAuthCookieName] Could not derive projectRef from NEXT_PUBLIC_SUPABASE_URL');
-    return 'sb-unknown-auth-token'; // Fallback, though unlikely to work
+    console.warn('[getSupabaseAuthCookieName] Could not derive projectRef from NEXT_PUBLIC_SUPABASE_URL. Using default: sb-*-auth-token');
+    // Fallback to a generic pattern if projectRef can't be derived
+    // This might not be specific enough if multiple Supabase projects use the same domain.
+    // However, for createServerActionClient, it primarily relies on the `cookies` function.
+    return `sb-${process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "unknown"}-auth-token`; // A more generic fallback
   }
   return `sb-${projectRef}-auth-token`;
 };
 
+
 export async function getProducts(options?: { limit?: number; offset?: number }): Promise<Product[]> {
-  // For public data, we might not need an authenticated client,
-  // but using createServerActionClient is fine if RLS allows anon reads.
-  // If strictly public, createServerComponentClient could also be used here if in an RSC.
   const supabase = createServerActionClient<Database>({ cookies });
   const { limit = 20, offset = 0 } = options || {};
 
@@ -124,8 +122,7 @@ export async function searchProductsByName(query: string): Promise<Product[]> {
 }
 
 export async function deleteProduct(productId: string): Promise<{ success: boolean; message?: string }> {
-  console.log(`--- [deleteProduct Action] --- STEP 1: Action Called ---`);
-  console.log(`Product ID for delete: ${productId}`);
+  console.log(`--- [deleteProduct Action] --- STEP 1: Action Called for product ID: ${productId}`);
   
   if (!productId) {
     console.log("--- [deleteProduct Action] --- STEP ERROR: Product ID not provided.");
@@ -137,38 +134,38 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
   let cookieDebugMessage = "Cookie check not performed due to early exit or error.";
 
   try {
-    // IMPORTANT: Pass the cookies FUNCTION from next/headers
-    supabase = createServerActionClient<Database>({ cookies });
-    console.log(`--- [deleteProduct Action] --- STEP 2: Supabase client created ---`);
+    supabase = createServerActionClient<Database>({ cookies }); // Pass cookies function directly
+    console.log(`--- [deleteProduct Action] --- STEP 2: Supabase client created.`);
 
-    const cookieStoreForLogging = cookies(); // Call cookies() to get the store
-    const specificAuthCookie = cookieStoreForLogging.get(authCookieName);
-    cookieDebugMessage = specificAuthCookie ? `Cookie '${authCookieName}' ENCONTRADO (valor: ${specificAuthCookie.value.substring(0,15)}...).` : `Cookie '${authCookieName}' NÃO ENCONTRADO.`;
+    const cookieStore = cookies(); // Call cookies() to get the store for logging
+    const specificAuthCookie = cookieStore.get(authCookieName); // Try to get the specific cookie
+    cookieDebugMessage = specificAuthCookie ? `Cookie '${authCookieName}' ENCONTRADO.` : `Cookie '${authCookieName}' NÃO ENCONTRADO.`;
     console.log(`--- [deleteProduct Action] --- STEP 3: Cookie check: ${cookieDebugMessage}`);
-    // const allCookies = cookieStoreForLogging.getAll();
-    // console.log(`--- [deleteProduct Action] --- All cookies: ${JSON.stringify(allCookies.map(c => ({name: c.name, value: c.value.substring(0,10) + '...'})))}`);
-
+    
+    // Log all cookies for thorough debugging
+    // const allCookies = cookieStore.getAll();
+    // console.log(`--- [deleteProduct Action] --- All cookies available:`, JSON.stringify(allCookies.map(c => ({ name: c.name, value: c.value.substring(0,15) + '...' }))));
 
   } catch (clientError: any) {
-    console.error('--- [deleteProduct Action] --- CRITICAL ERROR: Failed to create Supabase client or access cookies:', clientError.message, clientError.stack);
-    return { success: false, message: `Erro crítico ao inicializar cliente Supabase para deletar: ${clientError.message}. ${cookieDebugMessage}` };
+    console.error('--- [deleteProduct Action] --- CRITICAL ERROR creating Supabase client:', clientError);
+    return { success: false, message: `Erro crítico ao inicializar cliente Supabase: ${clientError.message}. ${cookieDebugMessage}` };
   }
   
+  console.log("--- [deleteProduct Action] --- STEP 4: Attempting supabase.auth.getUser()");
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  console.log(`--- [deleteProduct Action] --- STEP 4: supabase.auth.getUser() CALLED ---`);
 
   if (authError) {
-    console.error('--- [deleteProduct Action] --- AUTH ERROR from supabase.auth.getUser():', JSON.stringify(authError, null, 2));
-    return { success: false, message: `Erro de autenticação ao deletar. ${cookieDebugMessage} Detalhe: ${authError.message}` };
+    console.error('--- [deleteProduct Action] --- AUTH ERROR from supabase.auth.getUser():', authError);
+    return { success: false, message: `Erro de autenticação. ${cookieDebugMessage} Detalhe: ${authError.message}` };
   }
 
   if (!user) {
     console.warn('--- [deleteProduct Action] --- AUTH WARNING: No user object returned (but no authError).');
-    return { success: false, message: `Ação não autorizada. Usuário não autenticado para deletar (no user object). ${cookieDebugMessage}` };
+    return { success: false, message: `Ação não autorizada. ${cookieDebugMessage} (Usuário não autenticado - no user object)` };
   }
   
-  console.log('--- [deleteProduct Action] --- AUTH SUCCESS: User object retrieved:', JSON.stringify(user, null, 2));
-  console.log("--- [deleteProduct Action] --- STEP 5: Authentication seems to have passed. Deleting product...");
+  console.log('--- [deleteProduct Action] --- AUTH SUCCESS: User ID:', user.id);
+  console.log("--- [deleteProduct Action] --- STEP 5: Authentication passed. Deleting product...");
   
   const { error: deleteError } = await supabase
     .from('products')
@@ -176,7 +173,7 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
     .eq('id', productId);
 
   if (deleteError) {
-    console.error('--- [deleteProduct Action] --- DB ERROR: Supabase error deleting product:', deleteError);
+    console.error('--- [deleteProduct Action] --- DB ERROR deleting product:', deleteError);
     return { success: false, message: `Erro ao deletar produto: ${deleteError.message}` };
   }
 
@@ -187,48 +184,45 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
 }
 
 export async function updateProduct(productId: string, productData: ProductUpdateData): Promise<{ success: boolean; message?: string; product?: Product }> {
-  console.log(`--- [updateProduct Action] --- STEP 1: Action Called ---`);
-  console.log(`Product ID: ${productId}`);
-  console.log("Product Data:", JSON.stringify(productData, null, 2));
+  console.log(`--- [updateProduct Action] --- STEP 1: Action Called for product ID: ${productId}`);
+  console.log("--- [updateProduct Action] --- Product Data:", JSON.stringify(productData, null, 2));
 
   let supabase;
   const authCookieName = getSupabaseAuthCookieName();
   let cookieDebugMessage = "Cookie check not performed due to early exit or error.";
 
   try {
-    // IMPORTANT: Pass the cookies FUNCTION from next/headers
-    supabase = createServerActionClient<Database>({ cookies });
-    console.log(`--- [updateProduct Action] --- STEP 2: Supabase client created ---`);
+    supabase = createServerActionClient<Database>({ cookies }); // Pass cookies function directly
+    console.log(`--- [updateProduct Action] --- STEP 2: Supabase client created.`);
 
-    const cookieStore = cookies(); // Call cookies() to get the store
-    const specificAuthCookie = cookieStore.get(authCookieName);
+    const cookieStore = cookies(); // Call cookies() to get the store for logging
+    const specificAuthCookie = cookieStore.get(authCookieName); // Try to get the specific cookie
     cookieDebugMessage = specificAuthCookie ? `Cookie '${authCookieName}' ENCONTRADO.` : `Cookie '${authCookieName}' NÃO ENCONTRADO.`;
     console.log(`--- [updateProduct Action] --- STEP 3: Cookie check: ${cookieDebugMessage}`);
     
-    // For more detailed debugging of all cookies:
     // const allCookies = cookieStore.getAll();
     // console.log(`--- [updateProduct Action] --- All cookies available:`, JSON.stringify(allCookies.map(c => ({ name: c.name, value: c.value.substring(0,15) + '...' }))));
 
   } catch (clientError: any) {
-    console.error('--- [updateProduct Action] --- CRITICAL ERROR: Failed to create Supabase client or access cookies:', clientError.message, clientError.stack);
+    console.error('--- [updateProduct Action] --- CRITICAL ERROR creating Supabase client:', clientError);
     return { success: false, message: `Erro crítico ao inicializar cliente Supabase: ${clientError.message}. ${cookieDebugMessage}` };
   }
 
+  console.log("--- [updateProduct Action] --- STEP 4: Attempting supabase.auth.getUser()");
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  console.log(`--- [updateProduct Action] --- STEP 4: supabase.auth.getUser() CALLED ---`);
 
   if (authError) {
-    console.error('--- [updateProduct Action] --- AUTH ERROR from supabase.auth.getUser():', JSON.stringify(authError, null, 2));
+    console.error('--- [updateProduct Action] --- AUTH ERROR from supabase.auth.getUser():', authError);
+    // Adicionando authError.message diretamente na mensagem de erro para o toast
     return { success: false, message: `Erro de autenticação. ${cookieDebugMessage} Detalhe: ${authError.message}` };
   }
 
   if (!user) {
-    console.warn('--- [updateProduct Action] --- AUTH WARNING: No user object returned from supabase.auth.getUser() (but no authError).');
-    // This is the path that leads to the "Auth session missing!" if cookieDebugMessage shows "NÃO ENCONTRADO"
-    return { success: false, message: `Ação não autorizada. ${cookieDebugMessage} (Usuário não autenticado)` };
+    console.warn('--- [updateProduct Action] --- AUTH WARNING: No user object returned (but no authError).');
+    return { success: false, message: `Ação não autorizada. ${cookieDebugMessage} (Usuário não autenticado - no user object)` };
   }
 
-  console.log('--- [updateProduct Action] --- AUTH SUCCESS: User object retrieved:', JSON.stringify(user, null, 2));
+  console.log('--- [updateProduct Action] --- AUTH SUCCESS: User ID:', user.id );
   console.log("--- [updateProduct Action] --- STEP 5: Authentication passed. Updating product in database...");
   
   const { data: updatedProductData, error: updateError } = await supabase
@@ -239,7 +233,7 @@ export async function updateProduct(productId: string, productData: ProductUpdat
     .single();
 
   if (updateError) {
-    console.error('--- [updateProduct Action] --- DB ERROR: Supabase error updating product:', updateError);
+    console.error('--- [updateProduct Action] --- DB ERROR updating product:', updateError);
     return { success: false, message: `Erro ao atualizar produto no banco de dados: ${updateError.message}` };
   }
   
@@ -259,3 +253,4 @@ export async function updateProduct(productId: string, productData: ProductUpdat
     product: updatedProductData as Product
   };
 }
+

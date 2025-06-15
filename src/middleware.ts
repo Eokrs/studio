@@ -6,47 +6,44 @@ import type { Database } from '@/lib/supabase';
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
-
-  // Create a Supabase client configured to use cookies
   const supabase = createMiddlewareClient<Database>({ req, res });
+  const { pathname } = req.nextUrl;
 
-  // Refresh session if expired - crucial for keeping the user logged in
-  // This also makes sure the session cookie is updated if necessary.
+  console.log(`[Middleware] START: Processing request for ${pathname}`);
+
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
   if (sessionError) {
-    console.error('Middleware: Error getting session:', sessionError.message);
-    // Allow request to proceed, maybe show an error page or rely on client-side checks
-    // For now, we'll let it pass and the route itself can handle the error display if needed.
+    console.error(`[Middleware] ERROR: Error getting session for ${pathname}: ${sessionError.message}`);
+    // Mesmo com erro, permite que a requisição prossiga para que a página possa lidar com isso,
+    // ou para evitar bloquear recursos públicos se o matcher for muito amplo.
     return res;
   }
-  
-  const { pathname } = req.nextUrl;
 
-  // Handle /admin/login path specifically
   if (pathname === '/admin/login') {
     if (session) {
-      // User is logged in and trying to access login page, redirect to dashboard
+      console.log(`[Middleware] INFO: User HAS SESSION. Path is /admin/login. Redirecting to /admin/dashboard.`);
       return NextResponse.redirect(new URL('/admin/dashboard', req.url));
     }
-    // User is not logged in and on login page, allow request to proceed
-    return res;
+    console.log(`[Middleware] INFO: User has NO session. Path is /admin/login. Allowing access.`);
+    return res; // Permite acesso à página de login se não houver sessão
   }
 
-  // Handle other /admin/* paths
   if (pathname.startsWith('/admin/')) {
     if (!session) {
-      // User is not logged in and trying to access a protected admin page, redirect to login
+      console.log(`[Middleware] INFO: User has NO SESSION. Path is ${pathname}. Redirecting to /admin/login.`);
       const loginUrl = new URL('/admin/login', req.url);
       // Optionally, pass the original path as a query param for redirecting after login
       // loginUrl.searchParams.set('redirectedFrom', pathname);
       return NextResponse.redirect(loginUrl);
     }
-    // User is logged in and accessing a protected admin page, allow request to proceed
+    // Se chegou aqui, o usuário tem uma sessão e está acessando uma página /admin/* que não é /admin/login
+    console.log(`[Middleware] INFO: User HAS SESSION. Path is ${pathname}. Allowing access.`);
     return res;
   }
 
-  // For all other non-admin paths, just allow the request
+  // Para todas as outras rotas não-admin, apenas permite a requisição
+  console.log(`[Middleware] END: Path ${pathname} is not an admin route or already handled. Allowing.`);
   return res;
 }
 

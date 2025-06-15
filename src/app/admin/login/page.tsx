@@ -1,12 +1,11 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation'; // Ainda pode ser útil para outros cenários, mas não para o redirect principal aqui
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { supabase } from '@/lib/supabase'; // Standard client-side Supabase instance for signIn
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +20,7 @@ const loginSchema = z.object({
 type LoginFormInputs = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const router = useRouter();
+  const router = useRouter(); // Mantido caso necessário para outras lógicas
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true); 
@@ -35,37 +34,59 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
+    let didUnmount = false;
     console.log('LOGIN_PAGE_EFFECT: Iniciando verificação de sessão no cliente.');
-    supabase.auth.getSession()
-      .then(({ data: { session }, error }) => {
-        if (error) {
-          console.error('LOGIN_PAGE_EFFECT: Erro ao obter sessão via supabase.auth.getSession():', error.message);
-          setIsCheckingSession(false); // Houve um erro, esconder o loader.
+  
+    const checkSession = async () => {
+      try {
+        // Não precisamos de `supabase.auth.onAuthStateChange` aqui pois o middleware e 
+        // `getSession` devem cuidar da sessão em mudanças de rota.
+        const { data: { session }, error } = await supabase.auth.getSession();
+  
+        if (didUnmount) {
+          console.log('LOGIN_PAGE_EFFECT: Componente desmontado antes da conclusão da verificação de sessão.');
           return;
         }
-        
-        if (session) {
-          console.log('LOGIN_PAGE_EFFECT: Sessão encontrada no cliente. Redirecionando para /admin/dashboard.');
-          router.replace('/admin/dashboard');
-          // Se formos redirecionados, o componente será desmontado, então não precisamos
-          // definir isCheckingSession como false aqui, pois o loader não estará mais visível.
+  
+        if (error) {
+          console.error('LOGIN_PAGE_EFFECT: Erro ao obter sessão via supabase.auth.getSession():', error.message);
+          // Se houver erro, provavelmente não há sessão, então mostramos o form.
+          setIsCheckingSession(false);
+        } else if (session) {
+          console.log('LOGIN_PAGE_EFFECT: Sessão encontrada no cliente. Redirecionando para /admin/dashboard via window.location.href.');
+          // Força um full page reload para garantir que o middleware e o server-side state sejam atualizados.
+          // Isso é crucial se o middleware não estiver pegando a sessão após um router.replace().
+          window.location.href = '/admin/dashboard';
+          // Como estamos fazendo um full redirect, não precisamos chamar setIsCheckingSession(false) aqui,
+          // pois o componente será desmontado.
+          return; 
         } else {
           console.log('LOGIN_PAGE_EFFECT: Nenhuma sessão encontrada no cliente. Exibindo formulário de login.');
-          setIsCheckingSession(false); // Nenhuma sessão, esconder o loader.
+          setIsCheckingSession(false);
         }
-      })
-      .catch((err) => {
-        // Este catch é para erros na própria promise, como falhas de rede.
+      } catch (err: any) {
+        if (didUnmount) {
+            console.log('LOGIN_PAGE_EFFECT: Componente desmontado durante catch.');
+            return;
+        }
         console.error('LOGIN_PAGE_EFFECT: Erro inesperado na promise supabase.auth.getSession():', err.message);
-        setIsCheckingSession(false); // Erro inesperado, esconder o loader.
-      });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+        setIsCheckingSession(false);
+      }
+    };
+  
+    checkSession();
+  
+    return () => {
+      didUnmount = true;
+      console.log('LOGIN_PAGE_EFFECT: Componente de login desmontado.');
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Array de dependências vazio para rodar apenas uma vez na montagem.
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error }_ = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       });
@@ -91,7 +112,11 @@ export default function LoginPage() {
         variant: 'destructive',
       });
     } finally {
-      setIsSubmitting(false);
+      // Se o login falhar e não houver redirecionamento, garantimos que o botão seja reativado.
+      // Se o login for bem-sucedido, o window.location.href fará o componente desmontar.
+      if (window.location.pathname === '/admin/login') { // Checa se ainda estamos na página de login
+        setIsSubmitting(false);
+      }
     }
   };
 
