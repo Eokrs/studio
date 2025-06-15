@@ -1,13 +1,13 @@
 
 'use client';
 
-import React, { useState /* useEffect */ } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
-// import { useRouter } from 'next/navigation'; // Manter comentado por enquanto, usando window.location.href
-import { supabase } from '@/lib/supabase'; // Descomentado
+// import { useRouter } from 'next/navigation'; // Kept commented, using window.location.href
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,11 +29,10 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  // const router = useRouter(); // Manter comentado
   const { toast } = useToast();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  // const [isCheckingSession, setIsCheckingSession] = useState(true); // Manter comentado por enquanto
+  const [isCheckingSession, setIsCheckingSession] = useState(true); // Start true to show loader
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -43,30 +42,34 @@ export default function LoginPage() {
     },
   });
 
-  // useEffect(() => {
-  //   // Lógica de verificação de sessão será reintroduzida depois
-  //   // console.log('LOGIN_PAGE_EFFECT: Iniciando verificação de sessão no cliente.');
-  //   // const checkSession = async () => {
-  //   //   try {
-  //   //     const { data: { session }, error } = await supabase.auth.getSession();
-  //   //     if (error) {
-  //   //       console.error('LOGIN_PAGE_EFFECT: Erro ao verificar sessão:', error.message);
-  //   //       setLoginError('Erro ao verificar sessão. Tente recarregar a página.');
-  //   //     } else if (session) {
-  //   //       console.log('LOGIN_PAGE_EFFECT: Sessão encontrada no cliente. Redirecionando para /admin/dashboard.');
-  //   //       window.location.href = '/admin/dashboard'; // Usar navegação completa
-  //   //       return; // Retorna para evitar chamar setIsCheckingSession(false) desnecessariamente
-  //   //     } else {
-  //   //       console.log('LOGIN_PAGE_EFFECT: Nenhuma sessão encontrada no cliente.');
-  //   //     }
-  //   //   } catch (e: any) {
-  //   //     console.error('LOGIN_PAGE_EFFECT: Exceção ao verificar sessão:', e.message);
-  //   //     setLoginError('Exceção ao verificar sessão. Tente recarregar.');
-  //   //   }
-  //   //   setIsCheckingSession(false);
-  //   // };
-  //   // checkSession();
-  // }, [/* router */]); // Dependências serão revistas
+  useEffect(() => {
+    console.log('LOGIN_PAGE_EFFECT: Iniciando verificação de sessão no cliente.');
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('LOGIN_PAGE_EFFECT: Erro ao verificar sessão no cliente:', error.message);
+          // Allow page to load normally for user to attempt login
+        } else if (session) {
+          console.log('LOGIN_PAGE_EFFECT: Sessão encontrada no cliente. Redirecionando para /admin/dashboard.');
+          window.location.href = '/admin/dashboard'; // Use full page navigation
+          return; // Important to prevent setIsCheckingSession(false) if redirecting
+        } else {
+          console.log('LOGIN_PAGE_EFFECT: Nenhuma sessão encontrada no cliente. Exibindo formulário de login.');
+        }
+      } catch (e: any) {
+        console.error('LOGIN_PAGE_EFFECT: Exceção ao verificar sessão no cliente:', e.message);
+        // Allow page to load normally
+      } finally {
+        // Only set to false if not redirecting
+        if (!window.location.pathname.endsWith('/admin/dashboard')) { // Basic check
+             setIsCheckingSession(false);
+        }
+      }
+    };
+    checkSession();
+  }, []); // Empty dependency array, run once on mount
+
 
   const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
     setIsLoggingIn(true);
@@ -81,7 +84,6 @@ export default function LoginPage() {
 
       if (error) {
         console.error('LOGIN_PAGE_SUBMIT: Erro no login com Supabase:', error.message);
-        // Ajustar a mensagem de erro para ser mais amigável, se necessário
         if (error.message.includes('Invalid login credentials')) {
           setLoginError('Email ou senha inválidos. Verifique e tente novamente.');
         } else {
@@ -114,15 +116,14 @@ export default function LoginPage() {
     }
   };
 
-  // Lógica de carregamento foi removida temporariamente para simplificar
-  // if (isCheckingSession) {
-  //   return (
-  //     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
-  //       <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-  //       <p className="text-muted-foreground">Verificando sessão...</p>
-  //     </div>
-  //   );
-  // }
+  if (isCheckingSession) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Verificando sessão...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
