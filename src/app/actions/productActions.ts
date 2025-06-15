@@ -19,26 +19,30 @@ import { revalidatePath } from 'next/cache';
 // This log confirms the file is loaded by Next.js
 console.log('PRODUCT ACTIONS FILE LOADED - Top Level Log');
 
-// Helper function to get the Supabase auth cookie name, consistent with middleware
+// Helper function to get the Supabase auth cookie name, consistent with middleware attempt
 const getSupabaseAuthCookieName = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!supabaseUrl) {
-    // This case should ideally be caught earlier (e.g., in supabase.ts or middleware)
-    // but as a safeguard for the helper:
-    console.warn('[getSupabaseAuthCookieName] NEXT_PUBLIC_SUPABASE_URL is not defined. Using generic cookie name.');
+    console.warn('[productActions:getSupabaseAuthCookieName] NEXT_PUBLIC_SUPABASE_URL is not defined. Using generic cookie name.');
     return `sb-unknown-auth-token`;
   }
-  const parts = supabaseUrl.split('.');
-  const projectRef = parts[0]?.replace('https://', '');
-  if (!projectRef) {
-    console.warn('[getSupabaseAuthCookieName] Could not derive projectRef from NEXT_PUBLIC_SUPABASE_URL. Using default pattern.');
-    return `sb-unknown-auth-token`;
+  try {
+    const url = new URL(supabaseUrl); // Use URL constructor for robust parsing
+    const projectRef = url.hostname.split('.')[0];
+    if (!projectRef) {
+      console.warn('[productActions:getSupabaseAuthCookieName] Could not derive projectRef from NEXT_PUBLIC_SUPABASE_URL. Using default pattern.');
+      return `sb-unknown-auth-token`;
+    }
+    return `sb-${projectRef}-auth-token`;
+  } catch (e) {
+    console.error('[productActions:getSupabaseAuthCookieName] Error parsing Supabase URL:', e);
+    return `sb-error-parsing-url-auth-token`;
   }
-  return `sb-${projectRef}-auth-token`;
 };
 
 
 export async function getProducts(options?: { limit?: number; offset?: number }): Promise<Product[]> {
+  // For public data, createServerActionClient is fine, RLS should allow reads.
   const supabase = createServerActionClient<Database>({ cookies });
   const { limit = 20, offset = 0 } = options || {};
 
@@ -136,23 +140,23 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
 
   let supabase;
   const authCookieName = getSupabaseAuthCookieName();
-  let cookieDebugMessage = `Cookie check for '${authCookieName}': `;
+  const cookieStore = cookies(); // Get the cookie store function
+  const specificAuthCookie = cookieStore.get(authCookieName); // Call .get() on the store
+  let cookieDebugMessage = `Cookie '${authCookieName}' `;
+  cookieDebugMessage += specificAuthCookie ? `ENCONTRADO (Valor Início: ${specificAuthCookie.value.substring(0,15)}...).` : `NÃO ENCONTRADO.`;
+  
+  console.log(`--- [deleteProduct Action] --- STEP 2: Cookie check. ${cookieDebugMessage}`);
 
   try {
-    const cookieStore = cookies(); // Get the cookie store
-    const specificAuthCookie = cookieStore.get(authCookieName);
-    cookieDebugMessage += specificAuthCookie ? `ENCONTRADO (Valor: ${specificAuthCookie.value.substring(0,15)}...).` : `NÃO ENCONTRADO.`;
-    
-    console.log(`--- [deleteProduct Action] --- STEP 2: Supabase client CREATION ATTEMPT. Cookie Status: ${cookieDebugMessage}`);
-    supabase = createServerActionClient<Database>({ cookies }); // Pass cookies function directly
-    console.log(`--- [deleteProduct Action] --- STEP 3: Supabase client created.`);
-
+    console.log(`--- [deleteProduct Action] --- STEP 3: Supabase client CREATION ATTEMPT.`);
+    supabase = createServerActionClient<Database>({ cookies: cookieStore }); // Pass the cookieStore (which is the cookies() function)
+    console.log(`--- [deleteProduct Action] --- STEP 4: Supabase client created.`);
   } catch (clientError: any) {
     console.error('--- [deleteProduct Action] --- CRITICAL ERROR creating Supabase client:', clientError);
     return { success: false, message: `Erro crítico ao inicializar cliente Supabase: ${clientError.message}. ${cookieDebugMessage}` };
   }
   
-  console.log("--- [deleteProduct Action] --- STEP 4: Attempting supabase.auth.getUser()");
+  console.log("--- [deleteProduct Action] --- STEP 5: Attempting supabase.auth.getUser()");
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError) {
@@ -161,12 +165,12 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
   }
 
   if (!user) {
-    console.warn('--- [deleteProduct Action] --- AUTH WARNING: No user object returned (but no authError). Potentially unauthorized.');
-    return { success: false, message: `Ação não autorizada. ${cookieDebugMessage} (Usuário não autenticado - no user object)` };
+    console.warn('--- [deleteProduct Action] --- AUTH WARNING: No user object (but no authError). Potentially unauthorized.');
+    return { success: false, message: `Ação não autorizada. ${cookieDebugMessage} (Usuário não autenticado - no user object): ${authError ? authError.message : 'Auth session missing!'}` };
   }
   
   console.log('--- [deleteProduct Action] --- AUTH SUCCESS: User ID:', user.id);
-  console.log("--- [deleteProduct Action] --- STEP 5: Authentication passed. Deleting product from database...");
+  console.log("--- [deleteProduct Action] --- STEP 6: Authentication passed. Deleting product from database...");
   
   const { error: deleteError } = await supabase
     .from('products')
@@ -180,7 +184,7 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
 
   revalidatePath('/admin/produtos');
   revalidatePath('/');
-  console.log("--- [deleteProduct Action] --- STEP 6: Product deleted successfully from database.");
+  console.log("--- [deleteProduct Action] --- STEP 7: Product deleted successfully from database.");
   return { success: true, message: "Produto excluído com sucesso!" };
 }
 
@@ -190,24 +194,23 @@ export async function updateProduct(productId: string, productData: ProductUpdat
 
   let supabase;
   const authCookieName = getSupabaseAuthCookieName();
-  let cookieDebugMessage = `Cookie check for '${authCookieName}': `;
-
+  const cookieStore = cookies(); // Get the cookie store function
+  const specificAuthCookie = cookieStore.get(authCookieName); // Call .get() on the store
+  let cookieDebugMessage = `Cookie '${authCookieName}' `;
+  cookieDebugMessage += specificAuthCookie ? `ENCONTRADO (Valor Início: ${specificAuthCookie.value.substring(0,15)}...).` : `NÃO ENCONTRADO.`;
+  
+  console.log(`--- [updateProduct Action] --- STEP 2: Cookie check. ${cookieDebugMessage}`);
 
   try {
-    const cookieStore = cookies(); // Get the cookie store
-    const specificAuthCookie = cookieStore.get(authCookieName);
-    cookieDebugMessage += specificAuthCookie ? `ENCONTRADO (Valor: ${specificAuthCookie.value.substring(0,15)}...).` : `NÃO ENCONTRADO.`;
-
-    console.log(`--- [updateProduct Action] --- STEP 2: Supabase client CREATION ATTEMPT. Cookie Status: ${cookieDebugMessage}`);
-    supabase = createServerActionClient<Database>({ cookies }); // Pass cookies function directly
-    console.log(`--- [updateProduct Action] --- STEP 3: Supabase client created.`);
-
+    console.log(`--- [updateProduct Action] --- STEP 3: Supabase client CREATION ATTEMPT.`);
+    supabase = createServerActionClient<Database>({ cookies: cookieStore }); // Pass the cookieStore
+    console.log(`--- [updateProduct Action] --- STEP 4: Supabase client created.`);
   } catch (clientError: any) {
     console.error('--- [updateProduct Action] --- CRITICAL ERROR creating Supabase client:', clientError);
     return { success: false, message: `Erro crítico ao inicializar cliente Supabase: ${clientError.message}. ${cookieDebugMessage}` };
   }
 
-  console.log("--- [updateProduct Action] --- STEP 4: Attempting supabase.auth.getUser()");
+  console.log("--- [updateProduct Action] --- STEP 5: Attempting supabase.auth.getUser()");
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError) {
@@ -216,12 +219,12 @@ export async function updateProduct(productId: string, productData: ProductUpdat
   }
 
   if (!user) {
-    console.warn('--- [updateProduct Action] --- AUTH WARNING: No user object returned (but no authError). Potentially unauthorized.');
-    return { success: false, message: `Ação não autorizada. ${cookieDebugMessage} (Usuário não autenticado - no user object)` };
+    console.warn('--- [updateProduct Action] --- AUTH WARNING: No user object (but no authError). Potentially unauthorized.');
+    return { success: false, message: `Ação não autorizada. ${cookieDebugMessage} (Usuário não autenticado - no user object): ${authError ? authError.message : 'Auth session missing!'}` };
   }
 
   console.log('--- [updateProduct Action] --- AUTH SUCCESS: User ID:', user.id );
-  console.log("--- [updateProduct Action] --- STEP 5: Authentication passed. Updating product in database...");
+  console.log("--- [updateProduct Action] --- STEP 6: Authentication passed. Updating product in database...");
   
   const { data: updatedProductData, error: updateError } = await supabase
     .from('products')
@@ -244,7 +247,7 @@ export async function updateProduct(productId: string, productData: ProductUpdat
   revalidatePath(`/admin/produtos/edit/${productId}`);
   revalidatePath('/'); 
 
-  console.log("--- [updateProduct Action] --- STEP 6: Product updated successfully in database.");
+  console.log("--- [updateProduct Action] --- STEP 7: Product updated successfully in database.");
   return { 
     success: true, 
     message: "Produto atualizado com sucesso!",
