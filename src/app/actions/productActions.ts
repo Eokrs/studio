@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Server actions for fetching and managing product data from Supabase.
@@ -105,8 +106,15 @@ export async function searchProductsByName(query: string): Promise<Product[]> {
 
 export async function deleteProduct(productId: string): Promise<{ success: boolean; message?: string }> {
   const supabase = createServerActionClient<Database>({ cookies });
-   const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError) {
+    console.error('Error getting user in deleteProduct server action:', authError);
+    return { success: false, message: `Erro de autenticação ao excluir: ${authError.message}` };
+  }
+
   if (!user) {
+    console.warn('No user found in deleteProduct server action (no authError).');
     return { success: false, message: "Ação não autorizada. Usuário não autenticado." };
   }
 
@@ -131,8 +139,15 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
 
 export async function updateProduct(productId: string, productData: ProductUpdateData): Promise<{ success: boolean; message?: string; product?: Product }> {
   const supabase = createServerActionClient<Database>({ cookies });
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError) {
+    console.error('Error getting user in updateProduct server action:', authError);
+    return { success: false, message: `Erro de autenticação ao atualizar: ${authError.message}` };
+  }
+
   if (!user) {
+    console.warn('No user found in updateProduct server action (no authError).');
     return { success: false, message: "Ação não autorizada. Usuário não autenticado." };
   }
 
