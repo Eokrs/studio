@@ -6,8 +6,8 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
-// import { useRouter } from 'next/navigation'; // Comentado por enquanto
-// import { supabase } from '@/lib/supabase'; // Comentado por enquanto
+// import { useRouter } from 'next/navigation'; // Manter comentado por enquanto, usando window.location.href
+import { supabase } from '@/lib/supabase'; // Descomentado
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,11 +29,11 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  // const router = useRouter(); // Comentado por enquanto
+  // const router = useRouter(); // Manter comentado
   const { toast } = useToast();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  // const [isCheckingSession, setIsCheckingSession] = useState(true); // Removido por enquanto
+  // const [isCheckingSession, setIsCheckingSession] = useState(true); // Manter comentado por enquanto
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -44,44 +44,78 @@ export default function LoginPage() {
   });
 
   // useEffect(() => {
-  //   console.log('LOGIN_PAGE_EFFECT: Iniciando verificação de sessão no cliente.');
   //   // Lógica de verificação de sessão será reintroduzida depois
-  //   // setIsCheckingSession(false); 
+  //   // console.log('LOGIN_PAGE_EFFECT: Iniciando verificação de sessão no cliente.');
+  //   // const checkSession = async () => {
+  //   //   try {
+  //   //     const { data: { session }, error } = await supabase.auth.getSession();
+  //   //     if (error) {
+  //   //       console.error('LOGIN_PAGE_EFFECT: Erro ao verificar sessão:', error.message);
+  //   //       setLoginError('Erro ao verificar sessão. Tente recarregar a página.');
+  //   //     } else if (session) {
+  //   //       console.log('LOGIN_PAGE_EFFECT: Sessão encontrada no cliente. Redirecionando para /admin/dashboard.');
+  //   //       window.location.href = '/admin/dashboard'; // Usar navegação completa
+  //   //       return; // Retorna para evitar chamar setIsCheckingSession(false) desnecessariamente
+  //   //     } else {
+  //   //       console.log('LOGIN_PAGE_EFFECT: Nenhuma sessão encontrada no cliente.');
+  //   //     }
+  //   //   } catch (e: any) {
+  //   //     console.error('LOGIN_PAGE_EFFECT: Exceção ao verificar sessão:', e.message);
+  //   //     setLoginError('Exceção ao verificar sessão. Tente recarregar.');
+  //   //   }
+  //   //   setIsCheckingSession(false);
+  //   // };
+  //   // checkSession();
   // }, [/* router */]); // Dependências serão revistas
-
 
   const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
     setIsLoggingIn(true);
     setLoginError(null);
-    console.log('LOGIN_PAGE_SUBMIT: Tentando login com:', data.email);
+    console.log('LOGIN_PAGE_SUBMIT: Tentando login com Supabase para:', data.email);
 
-    // Simular chamada ao Supabase por enquanto
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log('LOGIN_PAGE_SUBMIT: Simulação de login concluída.');
-    toast({
-      title: 'Login (Simulado) Bem-sucedido!',
-      description: 'Você seria redirecionado agora.',
-    });
-    // Em um cenário real:
-    // window.location.href = '/admin/dashboard';
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
 
-    setIsLoggingIn(false);
-
-    // Lógica real de login com Supabase será reintroduzida depois:
-    // try {
-    //   const { error } = await supabase.auth.signInWithPassword({
-    //     email: data.email,
-    //     password: data.password,
-    //   });
-    //   // ... restante da lógica ...
-    // } catch (e: any) {
-    //   // ... tratamento de erro ...
-    // } finally {
-    //   setIsLoggingIn(false);
-    // }
+      if (error) {
+        console.error('LOGIN_PAGE_SUBMIT: Erro no login com Supabase:', error.message);
+        // Ajustar a mensagem de erro para ser mais amigável, se necessário
+        if (error.message.includes('Invalid login credentials')) {
+          setLoginError('Email ou senha inválidos. Verifique e tente novamente.');
+        } else {
+          setLoginError(`Erro no login: ${error.message}`);
+        }
+        toast({
+          title: 'Falha no Login',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        console.log('LOGIN_PAGE_SUBMIT: Login com Supabase bem-sucedido. Redirecionando para /admin/dashboard.');
+        toast({
+          title: 'Login Bem-sucedido!',
+          description: 'Você será redirecionado para o dashboard.',
+        });
+        // Forçar uma navegação completa para que o middleware possa processar a nova sessão
+        window.location.href = '/admin/dashboard';
+      }
+    } catch (e: any) {
+      console.error('LOGIN_PAGE_SUBMIT: Exceção durante o login com Supabase:', e.message);
+      setLoginError('Ocorreu um erro inesperado durante o login. Tente novamente.');
+      toast({
+        title: 'Erro Inesperado',
+        description: 'Ocorreu um erro inesperado. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
-  // if (isCheckingSession) { // Lógica de carregamento será reintroduzida depois
+  // Lógica de carregamento foi removida temporariamente para simplificar
+  // if (isCheckingSession) {
   //   return (
   //     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
   //       <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -114,6 +148,7 @@ export default function LoginPage() {
                 placeholder="seu@email.com"
                 {...form.register('email')}
                 className="bg-background/70 focus:bg-background"
+                disabled={isLoggingIn}
               />
               {form.formState.errors.email && (
                 <p className="text-xs text-destructive pt-1">{form.formState.errors.email.message}</p>
@@ -127,6 +162,7 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 {...form.register('password')}
                 className="bg-background/70 focus:bg-background"
+                disabled={isLoggingIn}
               />
               {form.formState.errors.password && (
                 <p className="text-xs text-destructive pt-1">{form.formState.errors.password.message}</p>
