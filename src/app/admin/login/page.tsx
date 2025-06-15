@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState /* useEffect */ } from 'react'; // useEffect comentado
+import React, { useState /* useEffect */ } from 'react'; // useEffect commented
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/card';
 import { Loader2, LogIn, AlertTriangle, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+// import { useRouter } from 'next/navigation'; // router commented
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
@@ -29,34 +30,52 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const { toast } = useToast();
+  // const router = useRouter(); // router commented
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  // Inicializa isCheckingSession como false para exibir o formulário diretamente
-  const [isCheckingSession, setIsCheckingSession] = useState(false); 
+  // Initialize isCheckingSession as false to display the form directly
+  // and avoid loops caused by client-side session checks for now.
+  const [isCheckingSession, setIsCheckingSession] = useState(false);
 
   console.log('LOGIN_PAGE_RENDER_TEST: LoginPage component está renderizando.');
 
-  /* useEffect comentado para evitar loop de redirecionamento
+  /*
+  // useEffect for session check is commented out to prevent client-side redirect loops.
+  // Middleware should handle redirects for users who are already logged in.
   useEffect(() => {
-    console.log('LOGIN_PAGE_EFFECT: Running to check client-side session.');
+    console.log('LOGIN_PAGE_EFFECT: Iniciando verificação de sessão no cliente.');
+    setIsCheckingSession(true); // Ensure loader is shown if this effect runs
+
     const checkClientSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('LOGIN_PAGE_EFFECT: Erro ao buscar sessão no cliente:', sessionError.message);
+          setLoginError(`Erro ao verificar sessão: ${sessionError.message}`);
+          setIsCheckingSession(false); // Stop loading on error
+          return;
+        }
+
         if (session) {
-          console.log('LOGIN_PAGE_EFFECT: Client-side session found. Redirecting to /admin/dashboard via window.location.href.');
-          window.location.href = '/admin/dashboard'; 
-          return; 
+          console.log('LOGIN_PAGE_EFFECT: Sessão encontrada no cliente. Redirecionando para /admin/dashboard.');
+          // Use window.location.href for a full page navigation to ensure middleware processes the new state
+          window.location.href = '/admin/dashboard';
+          // setIsCheckingSession(false); // Not strictly necessary if redirecting, but good practice
+          return; // Important to return after initiating redirect
         } else {
-          console.log('LOGIN_PAGE_EFFECT: No client-side session found. Showing login form.');
+          console.log('LOGIN_PAGE_EFFECT: Nenhuma sessão encontrada no cliente. Exibindo formulário de login.');
+          setIsCheckingSession(false); // Stop loading, show form
         }
       } catch (e: any) {
-        console.error('LOGIN_PAGE_EFFECT: Error checking client-side session:', e.message);
-      } finally {
-        setIsCheckingSession(false); 
+        console.error('LOGIN_PAGE_EFFECT: Exceção ao verificar sessão no cliente:', e.message);
+        setLoginError('Ocorreu um erro inesperado ao verificar sua sessão.');
+        setIsCheckingSession(false); // Stop loading on exception
       }
     };
+
     checkClientSession();
-  }, []); 
+  }, []); // Empty dependency array: run once on mount
   */
 
   const form = useForm<LoginFormValues>({
@@ -86,7 +105,6 @@ export default function LoginPage() {
           description: error.message,
           variant: 'destructive',
         });
-        setIsLoggingIn(false);
       } else {
         console.log('LOGIN_PAGE_SUBMIT: Supabase login successful. Redirecting to /admin/dashboard via window.location.href.');
         toast({
@@ -104,11 +122,12 @@ export default function LoginPage() {
         description: 'Ocorreu um erro inesperado durante o login.',
         variant: 'destructive',
       });
-      setIsLoggingIn(false);
+    } finally {
+      setIsLoggingIn(false); // Ensure this is always called
     }
   };
-  
-  if (isCheckingSession) { // Este bloco agora não deve ser alcançado inicialmente
+
+  if (isCheckingSession) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

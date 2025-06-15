@@ -140,8 +140,8 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
 
   let supabase;
   const authCookieName = getSupabaseAuthCookieName();
-  const cookieStore = cookies(); // Get the cookie store function
-  const specificAuthCookie = cookieStore.get(authCookieName); // Call .get() on the store
+  const cookieStore = cookies(); 
+  const specificAuthCookie = cookieStore.get(authCookieName); 
   let cookieDebugMessage = `Cookie '${authCookieName}' `;
   cookieDebugMessage += specificAuthCookie ? `ENCONTRADO (Valor Início: ${specificAuthCookie.value.substring(0,15)}...).` : `NÃO ENCONTRADO.`;
   
@@ -149,7 +149,7 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
 
   try {
     console.log(`--- [deleteProduct Action] --- STEP 3: Supabase client CREATION ATTEMPT.`);
-    supabase = createServerActionClient<Database>({ cookies: cookieStore }); // Pass the cookieStore (which is the cookies() function)
+    supabase = createServerActionClient<Database>({ cookies: cookieStore }); 
     console.log(`--- [deleteProduct Action] --- STEP 4: Supabase client created.`);
   } catch (clientError: any) {
     console.error('--- [deleteProduct Action] --- CRITICAL ERROR creating Supabase client:', clientError);
@@ -194,8 +194,8 @@ export async function updateProduct(productId: string, productData: ProductUpdat
 
   let supabase;
   const authCookieName = getSupabaseAuthCookieName();
-  const cookieStore = cookies(); // Get the cookie store function
-  const specificAuthCookie = cookieStore.get(authCookieName); // Call .get() on the store
+  const cookieStore = cookies(); 
+  const specificAuthCookie = cookieStore.get(authCookieName); 
   let cookieDebugMessage = `Cookie '${authCookieName}' `;
   cookieDebugMessage += specificAuthCookie ? `ENCONTRADO (Valor Início: ${specificAuthCookie.value.substring(0,15)}...).` : `NÃO ENCONTRADO.`;
   
@@ -203,7 +203,7 @@ export async function updateProduct(productId: string, productData: ProductUpdat
 
   try {
     console.log(`--- [updateProduct Action] --- STEP 3: Supabase client CREATION ATTEMPT.`);
-    supabase = createServerActionClient<Database>({ cookies: cookieStore }); // Pass the cookieStore
+    supabase = createServerActionClient<Database>({ cookies: cookieStore }); 
     console.log(`--- [updateProduct Action] --- STEP 4: Supabase client created.`);
   } catch (clientError: any) {
     console.error('--- [updateProduct Action] --- CRITICAL ERROR creating Supabase client:', clientError);
