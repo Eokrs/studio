@@ -23,8 +23,8 @@ type LoginFormInputs = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isCheckingSession, setIsCheckingSession] = useState(true); // To prevent flicker before middleware redirect
+  const [isSubmitting, setIsSubmitting] = useState(false); // Renamed from isLoading to be specific to form submission
+  const [isCheckingSession, setIsCheckingSession] = useState(true); 
 
   const {
     register,
@@ -34,23 +34,48 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
-  // This effect handles the case where a user with an active session lands directly on /admin/login.
-  // The middleware should also catch this, but this provides an additional client-side check.
   useEffect(() => {
+    let isMounted = true;
     const checkSessionAndRedirect = async () => {
-      // Use the public Supabase client here; middleware handles server-side session validation
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        router.replace('/admin/dashboard');
-      } else {
-        setIsCheckingSession(false);
+      // No need to set isCheckingSession to true here, it's true by default
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (!isMounted) return;
+
+        if (sessionError) {
+          console.error("Login page - Error getting session:", sessionError.message);
+          // Optionally, inform the user, though for a silent check, console log might be enough
+          // toast({ title: "Erro ao verificar sessão", description: sessionError.message, variant: "destructive" });
+        }
+        
+        if (session) {
+          router.replace('/admin/dashboard');
+          // No need to setIsCheckingSession(false) if navigating away, 
+          // but it doesn't hurt if navigation is somehow delayed.
+          // if (isMounted) setIsCheckingSession(false); // Or simply let unmount handle it
+        } else {
+          if (isMounted) setIsCheckingSession(false);
+        }
+      } catch (e: any) {
+        console.error("Login page - Unexpected error checking session:", e.message);
+        if (isMounted) {
+          // toast({ title: "Erro inesperado", description: "Falha ao verificar sessão.", variant: "destructive" });
+          setIsCheckingSession(false); // Crucial: ensure loader hides
+        }
       }
+      // No 'finally' block needed here as setIsCheckingSession(false) is handled in else/catch
     };
+
     checkSessionAndRedirect();
+
+    return () => {
+      isMounted = false;
+    };
   }, [router]);
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
@@ -68,8 +93,6 @@ export default function LoginPage() {
           title: 'Login bem-sucedido!',
           description: 'Redirecionando para o painel...',
         });
-        // Instead of router.replace, let the browser navigate and middleware handle redirection
-        // This ensures the middleware has a chance to set/refresh cookies from the new session.
         window.location.href = '/admin/dashboard';
       }
     } catch (e: any) {
@@ -79,7 +102,7 @@ export default function LoginPage() {
         variant: 'destructive',
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -127,9 +150,9 @@ export default function LoginPage() {
           <Button 
             type="submit" 
             className="w-full bg-primary text-primary-foreground hover:bg-primary/80 transition-all duration-300 shadow-md hover:shadow-lg" 
-            disabled={isLoading}
+            disabled={isSubmitting}
           >
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Entrar
           </Button>
         </form>

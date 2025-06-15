@@ -11,20 +11,42 @@ export async function middleware(req: NextRequest) {
   const supabase = createMiddlewareClient<Database>({ req, res });
 
   // Refresh session if expired - crucial for keeping the user logged in
-  const { data: { session } } = await supabase.auth.getSession();
+  // This also makes sure the session cookie is updated if necessary.
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
+  if (sessionError) {
+    console.error('Middleware: Error getting session:', sessionError.message);
+    // Allow request to proceed, maybe show an error page or rely on client-side checks
+    // For now, we'll let it pass and the route itself can handle the error display if needed.
+    return res;
+  }
+  
   const { pathname } = req.nextUrl;
 
-  // If trying to access /admin/login and session exists, redirect to dashboard
-  if (session && pathname === '/admin/login') {
-    return NextResponse.redirect(new URL('/admin/dashboard', req.url));
+  // Handle /admin/login path specifically
+  if (pathname === '/admin/login') {
+    if (session) {
+      // User is logged in and trying to access login page, redirect to dashboard
+      return NextResponse.redirect(new URL('/admin/dashboard', req.url));
+    }
+    // User is not logged in and on login page, allow request to proceed
+    return res;
   }
 
-  // If trying to access any other /admin/* route and no session, redirect to login
-  if (!session && pathname.startsWith('/admin/') && pathname !== '/admin/login') {
-    return NextResponse.redirect(new URL('/admin/login', req.url));
+  // Handle other /admin/* paths
+  if (pathname.startsWith('/admin/')) {
+    if (!session) {
+      // User is not logged in and trying to access a protected admin page, redirect to login
+      const loginUrl = new URL('/admin/login', req.url);
+      // Optionally, pass the original path as a query param for redirecting after login
+      // loginUrl.searchParams.set('redirectedFrom', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    // User is logged in and accessing a protected admin page, allow request to proceed
+    return res;
   }
 
+  // For all other non-admin paths, just allow the request
   return res;
 }
 
@@ -36,9 +58,15 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
+     * - api/ (API routes, if you had them and didn't want middleware)
+     * - .*\..* (files with extensions, e.g. image.png, style.css)
+     * This first pattern is a general attempt to match "pages".
      */
     '/((?!_next/static|_next/image|favicon.ico|api/|.*\\..*).*)',
-    '/admin/:path*', // Specifically include admin paths for protection
+    /*
+     * Specifically include all /admin paths to ensure they are processed by the middleware.
+     * This ensures that /admin/login and /admin/dashboard, etc., are all covered.
+     */
+    '/admin/:path*',
   ],
 };
