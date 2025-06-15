@@ -23,7 +23,7 @@ type LoginFormInputs = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false); // Renamed from isLoading to be specific to form submission
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true); 
 
   const {
@@ -35,44 +35,32 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    let isMounted = true;
-    const checkSessionAndRedirect = async () => {
-      // No need to set isCheckingSession to true here, it's true by default
-      try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-        if (!isMounted) return;
-
-        if (sessionError) {
-          console.error("Login page - Error getting session:", sessionError.message);
-          // Optionally, inform the user, though for a silent check, console log might be enough
-          // toast({ title: "Erro ao verificar sessão", description: sessionError.message, variant: "destructive" });
+    console.log('LOGIN_PAGE_EFFECT: Iniciando verificação de sessão no cliente.');
+    supabase.auth.getSession()
+      .then(({ data: { session }, error }) => {
+        if (error) {
+          console.error('LOGIN_PAGE_EFFECT: Erro ao obter sessão via supabase.auth.getSession():', error.message);
+          setIsCheckingSession(false); // Houve um erro, esconder o loader.
+          return;
         }
         
         if (session) {
+          console.log('LOGIN_PAGE_EFFECT: Sessão encontrada no cliente. Redirecionando para /admin/dashboard.');
           router.replace('/admin/dashboard');
-          // No need to setIsCheckingSession(false) if navigating away, 
-          // but it doesn't hurt if navigation is somehow delayed.
-          // if (isMounted) setIsCheckingSession(false); // Or simply let unmount handle it
+          // Se formos redirecionados, o componente será desmontado, então não precisamos
+          // definir isCheckingSession como false aqui, pois o loader não estará mais visível.
         } else {
-          if (isMounted) setIsCheckingSession(false);
+          console.log('LOGIN_PAGE_EFFECT: Nenhuma sessão encontrada no cliente. Exibindo formulário de login.');
+          setIsCheckingSession(false); // Nenhuma sessão, esconder o loader.
         }
-      } catch (e: any) {
-        console.error("Login page - Unexpected error checking session:", e.message);
-        if (isMounted) {
-          // toast({ title: "Erro inesperado", description: "Falha ao verificar sessão.", variant: "destructive" });
-          setIsCheckingSession(false); // Crucial: ensure loader hides
-        }
-      }
-      // No 'finally' block needed here as setIsCheckingSession(false) is handled in else/catch
-    };
-
-    checkSessionAndRedirect();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [router]);
+      })
+      .catch((err) => {
+        // Este catch é para erros na própria promise, como falhas de rede.
+        console.error('LOGIN_PAGE_EFFECT: Erro inesperado na promise supabase.auth.getSession():', err.message);
+        setIsCheckingSession(false); // Erro inesperado, esconder o loader.
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Array de dependências vazio para rodar apenas uma vez na montagem.
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
     setIsSubmitting(true);
@@ -93,6 +81,7 @@ export default function LoginPage() {
           title: 'Login bem-sucedido!',
           description: 'Redirecionando para o painel...',
         });
+        // Forçar um full page reload para garantir que o middleware e o server-side state sejam atualizados.
         window.location.href = '/admin/dashboard';
       }
     } catch (e: any) {
