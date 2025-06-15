@@ -32,7 +32,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [isCheckingSession, setIsCheckingSession] = useState(true); // Start true to show loader
+  const [isCheckingSession, setIsCheckingSession] = useState(false); // Initialize to false
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -42,14 +42,16 @@ export default function LoginPage() {
     },
   });
 
+  // Temporarily commented out to prevent reload loop
+  /*
   useEffect(() => {
     console.log('LOGIN_PAGE_EFFECT: Iniciando verificação de sessão no cliente.');
+    setIsCheckingSession(true); // Set true when starting check
     const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('LOGIN_PAGE_EFFECT: Erro ao verificar sessão no cliente:', error.message);
-          // Allow page to load normally for user to attempt login
         } else if (session) {
           console.log('LOGIN_PAGE_EFFECT: Sessão encontrada no cliente. Redirecionando para /admin/dashboard.');
           window.location.href = '/admin/dashboard'; // Use full page navigation
@@ -59,17 +61,16 @@ export default function LoginPage() {
         }
       } catch (e: any) {
         console.error('LOGIN_PAGE_EFFECT: Exceção ao verificar sessão no cliente:', e.message);
-        // Allow page to load normally
       } finally {
         // Only set to false if not redirecting
-        if (!window.location.pathname.endsWith('/admin/dashboard')) { // Basic check
+        if (!window.location.pathname.endsWith('/admin/dashboard')) { 
              setIsCheckingSession(false);
         }
       }
     };
     checkSession();
-  }, []); // Empty dependency array, run once on mount
-
+  }, []); 
+  */
 
   const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
     setIsLoggingIn(true);
