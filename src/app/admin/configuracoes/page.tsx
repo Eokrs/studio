@@ -57,7 +57,7 @@ const AdminSettingsFormInputSchema = z.object({
           else if (issue.path.length > 0) { 
               const problematicKeywordIndex = issue.path[0] as number;
               const problematicKeyword = keywords[problematicKeywordIndex];
-              if (issue.code === z.ZodIssueCode.too_short && typeof problematicKeyword === 'string') {
+              if (issue.code === z.ZodIssueCode.too_small && typeof problematicKeyword === 'string') { // Corrected from too_short
                    message = `A palavra-chave "${problematicKeyword}" é muito curta. Deve ter pelo menos ${issue.minimum} caracteres.`;
               } else if (typeof problematicKeyword === 'string') {
                    message = `Palavra-chave "${problematicKeyword}": ${issue.message}`;
@@ -330,4 +330,6 @@ export default function AdminConfiguracoesPage() {
     </div>
   );
 }
+    
+
     
