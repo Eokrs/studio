@@ -2,15 +2,14 @@
 "use client";
 
 import Image from 'next/image';
-import { m } from 'framer-motion';
+import { motion } from 'framer-motion'; // Changed import from m to motion
 import type { Product } from '@/data/products';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
-import { ShoppingCartIcon } from 'lucide-react';
+import { ShoppingCartIcon, TagIcon } from 'lucide-react';
 import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast'; // Import useToast
+import { useToast } from '@/hooks/use-toast';
 
 const SIZES = ["37", "38", "39", "40", "41", "42", "43"];
 
@@ -20,7 +19,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
-  const { toast } = useToast(); // Initialize toast
+  const { toast } = useToast();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   const handleAddToCart = () => {
@@ -28,16 +27,16 @@ export function ProductCard({ product }: ProductCardProps) {
       toast({
         title: "Tamanho Necessário",
         description: "Por favor, selecione um tamanho antes de adicionar ao carrinho.",
-        variant: "default", // Or consider a custom "warning" variant if available/needed
+        variant: "default", // Changed from "destructive" to "default" or "warning" as it's not a critical error
       });
       return;
     }
     addToCart(product, selectedSize);
-    setSelectedSize(null); // Reset size selection after adding to cart
+    setSelectedSize(null); 
   };
 
   return (
-    <m.div
+    <motion.div // Changed m.div to motion.div
       layout
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -53,7 +52,14 @@ export function ProductCard({ product }: ProductCardProps) {
           width={400}
           height={400}
           className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+          data-ai-hint="shoe fashion" 
         />
+        {product.category && (
+          <span className="absolute top-3 left-3 z-10 flex items-center px-3 py-1.5 text-xs font-semibold rounded-full bg-card/70 dark:bg-card/50 backdrop-blur-sm text-foreground/90 shadow-lg border border-white/20 dark:border-white/10">
+            <TagIcon className="inline-block h-3.5 w-3.5 mr-1.5 text-primary" />
+            {product.category}
+          </span>
+        )}
       </CardHeader>
       <CardContent className="p-3 flex-grow">
         <CardTitle className="font-headline text-lg mb-1 text-foreground">{product.name}</CardTitle>
@@ -83,9 +89,6 @@ export function ProductCard({ product }: ProductCardProps) {
             ))}
           </div>
         </div>
-        <Badge variant="secondary" className="bg-accent/20 text-accent-foreground border-accent/30 text-xs">
-          {product.category}
-        </Badge>
         <Button
           onClick={handleAddToCart}
           variant="outline"
@@ -99,6 +102,6 @@ export function ProductCard({ product }: ProductCardProps) {
           Adicionar ao Carrinho
         </Button>
       </CardFooter>
-    </m.div>
+    </motion.div> // Changed m.div to motion.div
   );
 }
