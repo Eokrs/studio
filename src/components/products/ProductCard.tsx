@@ -2,7 +2,7 @@
 "use client";
 
 import Image from 'next/image';
-import { motion } from 'framer-motion'; // Changed import from m to motion
+import { m } from 'framer-motion'; // Changed back to m
 import type { Product } from '@/data/products';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ export function ProductCard({ product }: ProductCardProps) {
       toast({
         title: "Tamanho Necessário",
         description: "Por favor, selecione um tamanho antes de adicionar ao carrinho.",
-        variant: "default", // Changed from "destructive" to "default" or "warning" as it's not a critical error
+        variant: "default",
       });
       return;
     }
@@ -36,7 +36,7 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <motion.div // Changed m.div to motion.div
+    <m.div // Changed back to m.div
       layout
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -54,12 +54,10 @@ export function ProductCard({ product }: ProductCardProps) {
           className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
           data-ai-hint="shoe fashion" 
         />
-        {product.category && (
-          <span className="absolute top-3 left-3 z-10 flex items-center px-3 py-1.5 text-xs font-semibold rounded-full bg-card/70 dark:bg-card/50 backdrop-blur-sm text-foreground/90 shadow-lg border border-white/20 dark:border-white/10">
-            <TagIcon className="inline-block h-3.5 w-3.5 mr-1.5 text-primary" />
-            {product.category}
-          </span>
-        )}
+        <span className="absolute top-3 left-3 z-10 flex items-center px-3 py-1.5 text-xs font-semibold rounded-full bg-card/70 dark:bg-card/50 backdrop-blur-sm text-foreground/90 shadow-lg border border-white/20 dark:border-white/10">
+          <TagIcon className="inline-block h-3.5 w-3.5 mr-1.5 text-primary" />
+          {product.category}
+        </span>
       </CardHeader>
       <CardContent className="p-3 flex-grow">
         <CardTitle className="font-headline text-lg mb-1 text-foreground">{product.name}</CardTitle>
@@ -102,6 +100,6 @@ export function ProductCard({ product }: ProductCardProps) {
           Adicionar ao Carrinho
         </Button>
       </CardFooter>
-    </motion.div> // Changed m.div to motion.div
+    </m.div> // Changed back to m.div
   );
 }
