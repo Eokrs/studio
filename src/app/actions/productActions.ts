@@ -3,9 +3,9 @@
 /**
  * @fileOverview Server actions for fetching and managing product data from Supabase.
  *
- * - getProducts - Fetches products with optional pagination.
+ * - getProducts - Fetches products with optional pagination, ensuring they are active and valid.
  * - getProductById - Fetches a single product by its ID.
- * - getCategories - Fetches all unique active product categories with their counts.
+ * - getCategories - Fetches all unique active product categories with their counts, based on valid products.
  * - searchProductsByName - Fetches products matching a search query.
  * - deleteProduct - Deletes a product by its ID.
  * - updateProduct - Updates an existing product.
@@ -42,13 +42,19 @@ const getSupabaseAuthCookieName = () => {
 
 
 export async function getProducts(options?: { limit?: number; offset?: number }): Promise<Product[]> {
-  // For public data, createServerActionClient is fine, RLS should allow reads.
   const supabase = createServerActionClient<Database>({ cookies });
   const { limit = 20, offset = 0 } = options || {};
 
   let query = supabase
     .from('products')
     .select('id, name, description, image, category, created_at, is_active')
+    .eq('is_active', true)        // Ensure only active products are fetched
+    .not('name', 'is', null)       // Ensure name is not null
+    .filter('name', 'neq', '')     // Ensure name is not an empty string
+    .not('image', 'is', null)      // Ensure image is not null
+    .filter('image', 'neq', '')    // Ensure image is not an empty string
+    .not('category', 'is', null)   // Ensure category is not null
+    .filter('category', 'neq', '') // Ensure category is not an empty string
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -92,33 +98,42 @@ export async function getProductById(productId: string): Promise<Product | null>
 export async function getCategories(): Promise<Array<{ name: string; count: number }>> {
   const supabase = createServerActionClient<Database>({ cookies });
   
-  // Fetch all active products and their categories
-  const { data: activeProducts, error: productsError } = await supabase
+  // Fetch products that are active and have valid, non-empty categories, names, and images
+  const { data: validProductsForCategories, error: productsError } = await supabase
     .from('products')
-    .select('category')
-    .eq('is_active', true); // Ensure we only consider active products
+    .select('category, name, image') // Select fields needed for validation and counting
+    .eq('is_active', true)
+    .not('name', 'is', null)
+    .filter('name', 'neq', '')
+    .not('image', 'is', null)
+    .filter('image', 'neq', '')
+    .not('category', 'is', null)
+    .filter('category', 'neq', '');
 
   if (productsError) {
-    console.error('Supabase error fetching active products for category count:', productsError);
+    console.error('Supabase error fetching products for category count:', productsError);
     throw new Error(`Não foi possível carregar as categorias. Erro do Supabase: "${productsError.message}". Verifique os logs do servidor e as políticas RLS.`);
   }
 
-  if (!activeProducts) {
+  if (!validProductsForCategories) {
     return [];
   }
 
-  // Count products per category
+  // Count products per category, ensuring category is trimmed and valid
   const categoryCounts: Record<string, number> = {};
-  for (const product of activeProducts) {
-    if (product.category) { // Ensure category is not null or undefined
-      categoryCounts[product.category] = (categoryCounts[product.category] || 0) + 1;
-    }
+  for (const product of validProductsForCategories) {
+    // product.category is guaranteed by the query to be non-null and non-empty.
+    // product.name and product.image are also guaranteed to be non-null and non-empty.
+    const cleanedCategory = product.category.trim();
+    // No need to check if cleanedCategory is empty again, as query handles it.
+    // if (cleanedCategory) { // This check becomes redundant if query is correct
+      categoryCounts[cleanedCategory] = (categoryCounts[cleanedCategory] || 0) + 1;
+    // }
   }
 
-  // Transform into the desired array structure and sort
   const categoriesWithCounts = Object.entries(categoryCounts)
     .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically by category name
+    .sort((a, b) => a.name.localeCompare(b.name)); 
 
   return categoriesWithCounts;
 }
@@ -134,9 +149,12 @@ export async function searchProductsByName(query: string): Promise<Product[]> {
     .from('products')
     .select('id, name, description, image, category, is_active, created_at') 
     .ilike('name', `%${query}%`)
-    .eq('is_active', true)
+    .eq('is_active', true) // Ensure search results are also active and valid
+    .not('name', 'is', null).filter('name', 'neq', '')
+    .not('image', 'is', null).filter('image', 'neq', '')
+    .not('category', 'is', null).filter('category', 'neq', '')
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(10); // Increased limit slightly for better search UX
 
   if (error) {
     console.error('Supabase search error:', error);
@@ -269,3 +287,5 @@ export async function updateProduct(productId: string, productData: ProductUpdat
     product: updatedProductData as Product
   };
 }
+
+    
