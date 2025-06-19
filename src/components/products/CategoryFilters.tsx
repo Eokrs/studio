@@ -1,7 +1,6 @@
 
 "use client";
 
-import { m } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -30,13 +29,6 @@ export function CategoryFilters({ categories, selectedCategory, onSelectCategory
           )}
         >
           {category}
-          {selectedCategory === category && (
-            <m.div
-              className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary" // Underline for selected, slightly thicker
-              layoutId="activeCategoryIndicator"
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            />
-          )}
         </Button>
       ))}
     </div>
