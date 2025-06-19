@@ -3,34 +3,67 @@
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import type { CategoryWithCount } from '@/components/sections/ProductShowcaseSection';
+// import { TagIcon } from 'lucide-react'; // Placeholder for future brand icons
 
 interface CategoryFiltersProps {
-  categories: string[];
+  categoriesWithCount: CategoryWithCount[];
   selectedCategory: string;
   onSelectCategory: (category: string) => void;
+  totalActiveProducts: number;
 }
 
-export function CategoryFilters({ categories, selectedCategory, onSelectCategory }: CategoryFiltersProps) {
-  const allCategories = ["Todos", ...categories];
+export function CategoryFilters({ 
+  categoriesWithCount, 
+  selectedCategory, 
+  onSelectCategory,
+  totalActiveProducts
+}: CategoryFiltersProps) {
+
+  const allCategoriesForDisplay: CategoryWithCount[] = [
+    { name: "Todos", count: totalActiveProducts },
+    ...categoriesWithCount
+  ];
 
   return (
-    <div className="flex flex-wrap justify-center gap-3 mb-8">
-      {allCategories.map((category) => (
-        <Button
-          key={category}
-          variant="ghost" // Base variant, custom styling applied via cn
-          onClick={() => onSelectCategory(category)}
-          className={cn(
-            "relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ease-in-out shadow-sm", // Base pill structure
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", // Standard focus styling
-            selectedCategory === category
-              ? "bg-primary/20 text-primary border border-primary/70 ring-1 ring-primary/50 font-semibold backdrop-blur-sm shadow-md" // Selected state
-              : "text-muted-foreground bg-background/60 dark:bg-muted/40 backdrop-blur-sm border border-border hover:bg-accent/50 hover:text-accent-foreground hover:border-accent/60 hover:shadow-lg" // Unselected state
-          )}
-        >
-          {category}
-        </Button>
-      ))}
+    <div className="mb-8 hide-scrollbar"> 
+      <div className="flex overflow-x-auto scroll-snap-x-mandatory py-2 gap-2 md:gap-3 px-1 md:flex-wrap md:justify-center md:overflow-x-visible">
+        {allCategoriesForDisplay.map((categoryItem) => (
+          <Button
+            key={categoryItem.name}
+            variant="ghost"
+            onClick={() => onSelectCategory(categoryItem.name)}
+            className={cn(
+              "flex-shrink-0 scroll-snap-align-start px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ease-in-out shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              // Glassmorphism base for unselected
+              "bg-card/60 dark:bg-muted/30 backdrop-blur-sm border border-border/50 text-foreground/80 hover:bg-accent/60 hover:text-accent-foreground hover:border-accent/70 hover:shadow-lg",
+              // Sticky "Todos" button on mobile
+              categoryItem.name === "Todos" && "md:sticky md:left-0 md:z-10", // Sticky only on md+, for mobile it scrolls
+              // Selected state
+              selectedCategory === categoryItem.name && 
+              "bg-primary/20 text-primary border-primary/70 ring-1 ring-primary/50 font-semibold shadow-lg backdrop-blur-md"
+            )}
+          >
+            {/* Placeholder for brand icon: <TagIcon className="mr-2 h-4 w-4" /> */}
+            {categoryItem.name}
+            <span className={cn(
+              "ml-1.5 text-xs",
+              selectedCategory === categoryItem.name ? "text-primary/90" : "text-muted-foreground/80"
+            )}>
+              ({categoryItem.count})
+            </span>
+          </Button>
+        ))}
+      </div>
+      <style jsx global>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none; /* Safari and Chrome */
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+        }
+      `}</style>
     </div>
   );
 }

@@ -5,7 +5,7 @@
  *
  * - getProducts - Fetches products with optional pagination.
  * - getProductById - Fetches a single product by its ID.
- * - getCategories - Fetches all unique active product categories.
+ * - getCategories - Fetches all unique active product categories with their counts.
  * - searchProductsByName - Fetches products matching a search query.
  * - deleteProduct - Deletes a product by its ID.
  * - updateProduct - Updates an existing product.
@@ -89,25 +89,40 @@ export async function getProductById(productId: string): Promise<Product | null>
 }
 
 
-export async function getCategories(): Promise<string[]> {
+export async function getCategories(): Promise<Array<{ name: string; count: number }>> {
   const supabase = createServerActionClient<Database>({ cookies });
-  const { data, error } = await supabase
+  
+  // Fetch all active products and their categories
+  const { data: activeProducts, error: productsError } = await supabase
     .from('products')
     .select('category')
-    .eq('is_active', true); 
+    .eq('is_active', true); // Ensure we only consider active products
 
-  if (error) {
-    console.error('Supabase error fetching categories:', error);
-    throw new Error(`Não foi possível carregar as categorias. Erro do Supabase: "${error.message}". Verifique os logs do servidor e as políticas RLS.`);
+  if (productsError) {
+    console.error('Supabase error fetching active products for category count:', productsError);
+    throw new Error(`Não foi possível carregar as categorias. Erro do Supabase: "${productsError.message}". Verifique os logs do servidor e as políticas RLS.`);
   }
 
-  if (!data) {
+  if (!activeProducts) {
     return [];
   }
 
-  const uniqueCategories = [...new Set(data.map((item: { category: string }) => item.category))];
-  return uniqueCategories.sort();
+  // Count products per category
+  const categoryCounts: Record<string, number> = {};
+  for (const product of activeProducts) {
+    if (product.category) { // Ensure category is not null or undefined
+      categoryCounts[product.category] = (categoryCounts[product.category] || 0) + 1;
+    }
+  }
+
+  // Transform into the desired array structure and sort
+  const categoriesWithCounts = Object.entries(categoryCounts)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically by category name
+
+  return categoriesWithCounts;
 }
+
 
 export async function searchProductsByName(query: string): Promise<Product[]> {
   const supabase = createServerActionClient<Database>({ cookies });

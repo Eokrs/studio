@@ -14,10 +14,15 @@ import { AlertTriangle, Loader2 } from 'lucide-react';
 
 const PRODUCTS_PER_PAGE = 20;
 
+export interface CategoryWithCount {
+  name: string;
+  count: number;
+}
+
 export function ProductShowcaseSection() {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [productCategories, setProductCategories] = useState<string[]>([]);
+  const [productCategoriesWithCount, setProductCategoriesWithCount] = useState<CategoryWithCount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [displayedProductsCount, setDisplayedProductsCount] = useState(PRODUCTS_PER_PAGE);
@@ -27,12 +32,17 @@ export function ProductShowcaseSection() {
       try {
         setIsLoading(true);
         setError(null);
-        const [fetchedProducts, fetchedCategories] = await Promise.all([
-          getProducts(),
-          getCategories()
+        const [fetchedProducts, fetchedCategoriesWithCount] = await Promise.all([
+          getProducts(), // Fetches all active products by default
+          getCategories() // Fetches categories with their active product counts
         ]);
-        setAllProducts(fetchedProducts);
-        setProductCategories(fetchedCategories);
+        
+        // Filter products to only include those that are active (is_active: true)
+        // getProducts already implies active, but double-checking or relying on its internal filter is key
+        const activeProducts = fetchedProducts.filter(p => p.is_active !== false); // Assuming is_active is true if undefined
+        setAllProducts(activeProducts);
+        setProductCategoriesWithCount(fetchedCategoriesWithCount);
+
       } catch (err) {
         console.error("Failed to fetch product data:", err);
         let errorMessage = "Falha ao carregar os produtos. Por favor, tente novamente mais tarde.";
@@ -85,11 +95,11 @@ export function ProductShowcaseSection() {
           </ScrollReveal>
           <div className="flex flex-wrap justify-center gap-2 mb-8">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-10 w-24 rounded-md bg-muted/50" />
+              <Skeleton key={i} className="h-10 w-24 rounded-full bg-muted/50" />
             ))}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
-            {Array.from({ length: PRODUCTS_PER_PAGE }).map((_, index) => ( // Show skeletons for one page
+            {Array.from({ length: PRODUCTS_PER_PAGE }).map((_, index) => ( 
               <div key={index} className="glass-card overflow-hidden h-full flex flex-col p-1.5">
                 <Skeleton className="aspect-square w-full rounded-md bg-muted/50" />
                 <div className="p-3 flex-grow">
@@ -98,7 +108,7 @@ export function ProductShowcaseSection() {
                   <Skeleton className="h-3 w-2/3 mb-2 bg-muted/50" />
                 </div>
                 <div className="p-3 pt-0">
-                  <Skeleton className="h-5 w-1/3 rounded-full bg-muted/50" />
+                   <Skeleton className="h-8 w-full rounded-md bg-muted/50" />
                 </div>
               </div>
             ))}
@@ -138,9 +148,10 @@ export function ProductShowcaseSection() {
 
         <ScrollReveal delay={0.2}>
           <CategoryFilters
-            categories={productCategories}
+            categoriesWithCount={productCategoriesWithCount}
             selectedCategory={selectedCategory}
             onSelectCategory={setSelectedCategory}
+            totalActiveProducts={allProducts.length}
           />
         </ScrollReveal>
         
@@ -172,11 +183,11 @@ export function ProductShowcaseSection() {
             <Button
               onClick={handleLoadMore}
               size="lg"
-              variant="outline" // Variant is outline, but className below makes it look like primary
+              variant="outline"
               className="bg-primary text-primary-foreground shadow-md transition-all duration-300 hover:bg-primary/60 dark:hover:bg-primary/40 hover:backdrop-blur-md hover:shadow-lg hover:border hover:border-primary/30 dark:hover:border-primary/20"
             >
               Carregar Mais Produtos
-              <Loader2 className="ml-2 h-5 w-5 animate-spin hidden" /> {/* For future loading state */}
+              <Loader2 className="ml-2 h-5 w-5 animate-spin hidden" /> 
             </Button>
           </ScrollReveal>
         )}
@@ -184,3 +195,4 @@ export function ProductShowcaseSection() {
     </section>
   );
 }
+
