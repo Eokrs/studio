@@ -67,7 +67,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <CardContent className="p-3 flex-grow">
         <CardTitle className="font-headline text-lg mb-1 text-foreground">{product.name}</CardTitle>
         <CardDescription className="text-xs text-muted-foreground mb-2 line-clamp-2">{product.description}</CardDescription>
-        <p className="text-lg font-semibold text-foreground mt-2 mb-1">
+        <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-500 mt-2 mb-1">
           {formattedPrice}
         </p>
       </CardContent>
