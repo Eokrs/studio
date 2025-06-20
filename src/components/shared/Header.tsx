@@ -132,7 +132,7 @@ export function Header() {
                 <Input
                   type="search"
                   placeholder="Buscar produtos..."
-                  className="pl-9 pr-3 h-10 w-full rounded-md border bg-background/80 focus:bg-background"
+                  className="pl-9 pr-3 h-10 w-full rounded-md border-border/30 dark:border-border/15 bg-card/50 dark:bg-card/30 backdrop-blur-lg text-foreground placeholder:text-muted-foreground shadow-lg focus:ring-1 focus:ring-ring focus:border-input"
                   value={searchTerm}
                   onChange={handleSearchChange}
                   onFocus={handleInputFocus}
