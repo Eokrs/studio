@@ -120,7 +120,13 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }, [toast]);
 
   const itemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
-  const totalPrice = 0; 
+  
+  const totalPrice = cartItems.reduce((total, item) => {
+    // Ensure product.price is a number and quantity is valid
+    const price = typeof item.product.price === 'number' ? item.product.price : 0;
+    const quantity = typeof item.quantity === 'number' && item.quantity > 0 ? item.quantity : 0;
+    return total + (price * quantity);
+  }, 0);
 
   return (
     <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, itemCount, totalPrice }}>

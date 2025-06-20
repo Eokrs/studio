@@ -32,6 +32,7 @@ export interface Database {
           description: string;
           image: string;
           category: string;
+          price: number; // Added price
           is_active: boolean;
           created_at: string;
         };
@@ -41,6 +42,7 @@ export interface Database {
           description: string;
           image: string;
           category: string;
+          price?: number; // Added price, optional due to DB DEFAULT
           is_active?: boolean;
           created_at?: string;
         };
@@ -50,6 +52,7 @@ export interface Database {
           description?: string;
           image?: string;
           category?: string;
+          price?: number; // Added price
           is_active?: boolean;
           created_at?: string;
         };

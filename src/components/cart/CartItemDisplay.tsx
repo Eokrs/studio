@@ -30,8 +30,18 @@ export function CartItemDisplay({ item }: CartItemDisplayProps) {
     updateQuantity(item.id, item.quantity - 1); // Use item.id
   };
 
+  const itemPriceFormatted = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(item.product.price);
+
+  const itemSubtotalFormatted = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(item.product.price * item.quantity);
+
   return (
-    <div className="flex items-center gap-4 py-4 border-b border-border/50">
+    <div className="flex items-start gap-4 py-4 border-b border-border/50">
       <Image
         src={item.product.image || 'https://placehold.co/64x64.png'}
         alt={item.product.name}
@@ -39,37 +49,45 @@ export function CartItemDisplay({ item }: CartItemDisplayProps) {
         height={64}
         className="rounded-md object-cover aspect-square"
       />
-      <div className="flex-grow">
-        <h4 className="font-medium text-sm text-foreground">{item.product.name}</h4>
+      <div className="flex-grow space-y-1">
+        <h4 className="font-medium text-sm text-foreground leading-tight">{item.product.name}</h4>
         <p className="text-xs text-muted-foreground">
           Tam: {item.size} &bull; {item.product.category}
         </p>
+        <p className="text-xs text-muted-foreground">
+          Preço Unit.: {itemPriceFormatted}
+        </p>
+         <p className="text-sm font-medium text-foreground">
+          Subtotal: {itemSubtotalFormatted}
+        </p>
       </div>
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="icon" onClick={handleDecrement} className="h-8 w-8">
-          -
-        </Button>
-        <Input
-          type="number"
-          value={item.quantity}
-          onChange={handleQuantityChange}
-          min="1"
-          className="h-8 w-12 text-center px-1 bg-background/80 focus:bg-background"
-          aria-label={`Quantidade de ${item.product.name} (Tam: ${item.size})`}
-        />
-        <Button variant="outline" size="icon" onClick={handleIncrement} className="h-8 w-8">
-          +
+      <div className="flex flex-col items-end gap-2">
+        <div className="flex items-center gap-1.5">
+          <Button variant="outline" size="icon" onClick={handleDecrement} className="h-7 w-7">
+            -
+          </Button>
+          <Input
+            type="number"
+            value={item.quantity}
+            onChange={handleQuantityChange}
+            min="1"
+            className="h-7 w-10 text-center px-1 bg-background/80 focus:bg-background text-sm"
+            aria-label={`Quantidade de ${item.product.name} (Tam: ${item.size})`}
+          />
+          <Button variant="outline" size="icon" onClick={handleIncrement} className="h-7 w-7">
+            +
+          </Button>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => removeFromCart(item.id)} // Use item.id
+          className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 h-7 w-7"
+          aria-label={`Remover ${item.product.name} (Tam: ${item.size}) do carrinho`}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={() => removeFromCart(item.id)} // Use item.id
-        className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 h-8 w-8"
-        aria-label={`Remover ${item.product.name} (Tam: ${item.size}) do carrinho`}
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
     </div>
   );
 }

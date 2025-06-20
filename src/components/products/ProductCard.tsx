@@ -2,7 +2,7 @@
 "use client";
 
 import Image from 'next/image';
-import { m } from 'framer-motion'; // Changed back to m
+import { m } from 'framer-motion';
 import type { Product } from '@/data/products';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,8 +35,13 @@ export function ProductCard({ product }: ProductCardProps) {
     setSelectedSize(null); 
   };
 
+  const formattedPrice = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(product.price);
+
   return (
-    <m.div // Changed back to m.div
+    <m.div
       layout
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -62,8 +67,11 @@ export function ProductCard({ product }: ProductCardProps) {
       <CardContent className="p-3 flex-grow">
         <CardTitle className="font-headline text-lg mb-1 text-foreground">{product.name}</CardTitle>
         <CardDescription className="text-xs text-muted-foreground mb-2 line-clamp-2">{product.description}</CardDescription>
+        <p className="text-lg font-semibold text-foreground mt-2 mb-1">
+          {formattedPrice}
+        </p>
       </CardContent>
-      <CardFooter className="p-3 pt-2 flex flex-col items-start w-full space-y-3">
+      <CardFooter className="p-3 pt-2 flex flex-col items-start w-full space-y-3 mt-auto">
         <div className="w-full">
           <p className="text-xs text-muted-foreground mb-1.5">Tamanho:</p>
           <div className="flex flex-wrap gap-1.5 mb-2">
@@ -100,6 +108,6 @@ export function ProductCard({ product }: ProductCardProps) {
           Adicionar ao Carrinho
         </Button>
       </CardFooter>
-    </m.div> // Changed back to m.div
+    </m.div>
   );
 }

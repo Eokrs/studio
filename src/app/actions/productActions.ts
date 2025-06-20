@@ -19,7 +19,7 @@ export async function getProducts(options?: { limit?: number; offset?: number })
 
   let query = supabase
     .from('products')
-    .select('id, name, description, image, category, created_at, is_active')
+    .select('id, name, description, image, category, price, created_at, is_active') // Added price
     .eq('is_active', true)
     .not('name', 'is', null)
     .filter('name', 'neq', '')
@@ -27,6 +27,7 @@ export async function getProducts(options?: { limit?: number; offset?: number })
     .filter('image', 'neq', '')
     .not('category', 'is', null)
     .filter('category', 'neq', '')
+    .not('price', 'is', null) // Ensure price is not null
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -38,7 +39,7 @@ export async function getProducts(options?: { limit?: number; offset?: number })
     if (error.message.includes("column") && error.message.includes("does not exist")) {
       const missingColumnMatch = error.message.match(/column "(.+?)" does not exist/);
       const missingColumn = missingColumnMatch ? missingColumnMatch[1] : "desconhecida";
-      detailedMessage += ` Parece que a coluna '${missingColumn}' está faltando na sua tabela 'products' ou tem um nome diferente do esperado. Verifique o arquivo 'supabase_schema.sql' e garanta que sua tabela no Supabase foi criada corretamente com todas as colunas, como por exemplo '${missingColumn} TEXT'.`;
+      detailedMessage += ` Parece que a coluna '${missingColumn}' está faltando na sua tabela 'products' ou tem um nome diferente do esperado. Verifique o arquivo 'supabase_schema.sql' e garanta que sua tabela no Supabase foi criada corretamente com todas as colunas, como por exemplo '${missingColumn} NUMERIC'.`;
     }
     detailedMessage += " Verifique os logs do servidor para detalhes e confirme suas políticas de Row Level Security (RLS) para a tabela 'products'. Consulte SUPABASE_TROUBLESHOOTING.md.";
     throw new Error(detailedMessage);
@@ -55,7 +56,7 @@ export async function getProductById(productId: string): Promise<Product | null>
   }
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, description, image, category, is_active, created_at')
+    .select('id, name, description, image, category, price, is_active, created_at') // Added price
     .eq('id', productId)
     .single();
 
@@ -72,14 +73,15 @@ export async function getCategories(): Promise<Array<{ name: string; count: numb
   
   const { data: validProductsForCategories, error: productsError } = await supabase
     .from('products')
-    .select('category, name, image')
+    .select('category, name, image, price') // Added price for completeness check
     .eq('is_active', true)
     .not('name', 'is', null)
     .filter('name', 'neq', '')
     .not('image', 'is', null)
     .filter('image', 'neq', '')
     .not('category', 'is', null)
-    .filter('category', 'neq', '');
+    .filter('category', 'neq', '')
+    .not('price', 'is', null); // Ensure price is not null for category grouping
 
   if (productsError) {
     console.error('Supabase error fetching products for category count:', productsError);
@@ -112,12 +114,13 @@ export async function searchProductsByName(query: string): Promise<Product[]> {
 
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, description, image, category, is_active, created_at') 
+    .select('id, name, description, image, category, price, is_active, created_at') // Added price
     .ilike('name', `%${query}%`)
     .eq('is_active', true)
     .not('name', 'is', null).filter('name', 'neq', '')
     .not('image', 'is', null).filter('image', 'neq', '')
     .not('category', 'is', null).filter('category', 'neq', '')
+    .not('price', 'is', null) // Ensure price is not null
     .order('created_at', { ascending: false })
     .limit(10);
 

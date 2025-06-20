@@ -21,16 +21,24 @@ interface CartSheetProps {
 }
 
 export function CartSheet({ children }: CartSheetProps) {
-  const { cartItems, itemCount, clearCart } = useCart();
+  const { cartItems, itemCount, clearCart, totalPrice } = useCart(); // Added totalPrice
   const whatsappNumber = "5522999586820";
+
+  const formattedTotalPrice = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(totalPrice);
 
   const handleFinalizeOrder = () => {
     if (itemCount === 0) return;
 
     let message = "Olá, gostaria de adquirir os seguintes produtos:\n";
     cartItems.forEach(item => {
-      message += `- ${item.product.name} | Tam: ${item.size} | Quant: ${item.quantity}\n`;
+      const itemPriceFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.product.price);
+      const itemSubtotalFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.product.price * item.quantity);
+      message += `- ${item.product.name} | Tam: ${item.size} | Quant: ${item.quantity} | Unit.: ${itemPriceFormatted} | Subtotal: ${itemSubtotalFormatted}\n`;
     });
+    message += `\nTotal do Pedido: ${formattedTotalPrice}`;
     
     const encodedMessage = encodeURIComponent(message.trim());
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
@@ -65,7 +73,11 @@ export function CartSheet({ children }: CartSheetProps) {
               </div>
             </ScrollArea>
             <SheetFooter className="p-6 border-t border-border/50 bg-background/70 dark:bg-background/60 backdrop-blur-sm mt-auto">
-              <div className="w-full space-y-3">
+              <div className="w-full space-y-4">
+                <div className="flex justify-between items-center font-semibold text-lg text-foreground">
+                  <span>Total:</span>
+                  <span>{formattedTotalPrice}</span>
+                </div>
                 <Button 
                   onClick={handleFinalizeOrder} 
                   className="w-full text-white font-semibold rounded-md transition-all duration-300 shadow-lg backdrop-blur-md border border-white/20 dark:border-white/10 bg-[#25D366]/[0.7] hover:bg-[#25D366]/[0.85] dark:bg-[#25D366]/[0.5] dark:hover:bg-[#25D366]/[0.65] hover:shadow-xl"
