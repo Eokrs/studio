@@ -30,8 +30,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
 
     let message = "Olá, gostaria de adquirir os seguintes produtos:\n\n";
     cartItems.forEach(item => {
-      const addonsPrice = item.addons.reduce((sum, addon) => sum + addon.price, 0);
-      const itemPrice = item.product.price + addonsPrice;
+      const itemPrice = item.product.price;
       
       const itemPriceFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(itemPrice);
       const itemSubtotalFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(itemPrice * item.quantity);
@@ -39,11 +38,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
       message += `👟 *${item.product.name}*\n`;
       message += `   - Tamanho: ${item.size}\n`;
       message += `   - Quantidade: ${item.quantity}\n`;
-      if (item.addons.length > 0) {
-        const addonsText = item.addons.map(a => `${a.name} (+${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(a.price)})`).join(', ');
-        message += `   - Opcionais: ${addonsText}\n`;
-      }
-      message += `   - Preço Unit. (c/ opc.): ${itemPriceFormatted}\n`;
+      message += `   - Preço Unit.: ${itemPriceFormatted}\n`;
       message += `   - Subtotal: *${itemSubtotalFormatted}*\n\n`;
     });
     message += `*Total do Pedido: ${formattedTotalPrice}*`;

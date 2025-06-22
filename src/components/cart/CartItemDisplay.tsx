@@ -34,8 +34,7 @@ export function CartItemDisplay({ item }: CartItemDisplayProps) {
     updateQuantity(item.id, 0); // Context will show toast
   };
 
-  const addonsPrice = item.addons.reduce((sum, addon) => sum + addon.price, 0);
-  const itemPrice = item.product.price + addonsPrice;
+  const itemPrice = item.product.price;
 
   const itemPriceFormatted = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -61,11 +60,6 @@ export function CartItemDisplay({ item }: CartItemDisplayProps) {
         <p className="text-xs text-muted-foreground">
           Tam: {item.size}
         </p>
-        {item.addons.length > 0 && (
-          <div className="text-xs text-muted-foreground">
-            Opcionais: {item.addons.map(a => a.name).join(', ')}
-          </div>
-        )}
         <p className="text-xs text-muted-foreground">
           Preço Unit.: {itemPriceFormatted}
         </p>

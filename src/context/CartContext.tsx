@@ -4,12 +4,12 @@
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { Product } from '@/data/products';
-import type { CartItem, Addon } from '@/types/cart';
+import type { CartItem } from '@/types/cart';
 import { useToast } from '@/hooks/use-toast';
 
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (product: Product, size: string, quantity: number, addons: Addon[]) => void;
+  addToCart: (product: Product, size: string, quantity: number) => void;
   removeFromCart: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
@@ -58,9 +58,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }
   }, [cartItems]);
 
-  const addToCart = useCallback((product: Product, size: string, quantity: number, addons: Addon[]) => {
-    const addonKey = addons.map(a => a.name).sort().join('-');
-    const itemId = `${product.id}-${size}-${addonKey}`;
+  const addToCart = useCallback((product: Product, size: string, quantity: number) => {
+    const itemId = `${product.id}-${size}`;
     
     setCartItems((prevItems) => {
       const existingItem = prevItems.find(item => item.id === itemId);
@@ -71,7 +70,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
             : item
         );
       }
-      return [...prevItems, { id: itemId, product, quantity, size, addons }];
+      return [...prevItems, { id: itemId, product, quantity, size }];
     });
 
     toast({
@@ -117,8 +116,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const itemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
   
   const totalPrice = cartItems.reduce((total, item) => {
-    const addonsPrice = item.addons.reduce((sum, addon) => sum + addon.price, 0);
-    const itemPrice = (item.product.price || 0) + addonsPrice;
+    const itemPrice = (item.product.price || 0);
     return total + (itemPrice * item.quantity);
   }, 0);
 
