@@ -9,23 +9,10 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { TagIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface ProductCardProps {
-  product: Product;
-}
-
 // Helper to get category-specific colors
-const getCategoryStyle = (category: string) => {
-    const lowerCategory = category.toLowerCase();
-    if (lowerCategory.includes('jordan')) {
-        return 'bg-red-900/70 text-red-300 border-red-500/30';
-    }
-    if (lowerCategory.includes('dunk')) {
-        return 'bg-sky-900/70 text-sky-300 border-sky-500/30';
-    }
-    if (lowerCategory.includes('new balance')) {
-        return 'bg-gray-700/70 text-gray-300 border-gray-500/30';
-    }
-    return 'bg-primary/20 text-primary-foreground/80 border-primary/30';
+const getCategoryStyle = (_category: string) => {
+    // Standardize all categories to the blue color scheme
+    return 'bg-sky-900/70 text-sky-300 border-sky-500/30';
 };
 
 
