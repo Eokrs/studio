@@ -16,9 +16,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { CartItemDisplay } from './CartItemDisplay';
 import { ShoppingCart, Trash2 } from 'lucide-react';
 import type { Addon } from '@/types/cart';
+import { useToast } from '@/hooks/use-toast';
 
 export function CartSheet({ children }: { children: React.ReactNode }) {
   const { cartItems, itemCount, clearCart, totalPrice } = useCart();
+  const { toast } = useToast();
   const whatsappNumber = "5522999586820";
 
   const formattedTotalPrice = new Intl.NumberFormat('pt-BR', {
@@ -51,6 +53,15 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
     
     window.open(whatsappUrl, '_blank');
+  };
+
+  const handleClearCart = () => {
+    clearCart();
+    toast({
+      title: "Carrinho Esvaziado",
+      description: "Todos os itens foram removidos do seu carrinho.",
+      variant: "default",
+    });
   };
 
   return (
@@ -93,7 +104,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
                 </Button>
                 <Button 
                     variant="outline" 
-                    onClick={clearCart} 
+                    onClick={handleClearCart} 
                     className="w-full border-destructive text-destructive hover:bg-destructive/10"
                     size="sm"
                 >

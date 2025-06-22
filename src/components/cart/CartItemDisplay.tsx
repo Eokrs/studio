@@ -7,6 +7,7 @@ import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface CartItemDisplayProps {
   item: CartItem;
@@ -14,6 +15,7 @@ interface CartItemDisplayProps {
 
 export function CartItemDisplay({ item }: CartItemDisplayProps) {
   const { updateQuantity } = useCart();
+  const { toast } = useToast();
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuantity = parseInt(e.target.value, 10);
@@ -31,7 +33,12 @@ export function CartItemDisplay({ item }: CartItemDisplayProps) {
   };
 
   const handleRemoveFromCart = () => {
-    updateQuantity(item.id, 0); // Context will show toast
+    updateQuantity(item.id, 0);
+    toast({
+      title: "Produto Removido",
+      description: `${item.product.name} (Tam: ${item.size}) foi removido do carrinho.`,
+      variant: "destructive",
+    });
   };
 
   const itemBasePrice = item.product.price;
