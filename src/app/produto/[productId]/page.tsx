@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: { params: { productId: string
   };
 }
 
-export default async function ProductPage({ params }: { params: { productId: string } }) {
+export default async function ProductPage({ params }: { params: { productId:string } }) {
   const product = await getProductById(params.productId);
 
   if (!product) {
@@ -47,20 +47,23 @@ export default async function ProductPage({ params }: { params: { productId: str
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 md:py-16 mt-20">
-      <div className="grid md:grid-cols-2 gap-8 lg:gap-16 items-start">
+    <div className="container mx-auto px-4 py-8 md:py-16 mt-16 md:mt-20">
+      <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-start">
+        {/* Coluna da Imagem */}
         <div className="relative aspect-square w-full rounded-xl overflow-hidden glass-card p-2 shadow-lg">
           <Image
             src={product.image}
             alt={product.name}
             fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover w-full h-full rounded-lg"
             priority
             data-ai-hint="shoe fashion"
           />
         </div>
-        <div>
+        
+        {/* Coluna de Informações e Compra */}
+        <div className="flex flex-col">
           <ProductPurchasePanel product={product} />
         </div>
       </div>

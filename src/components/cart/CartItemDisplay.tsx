@@ -7,15 +7,13 @@ import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 interface CartItemDisplayProps {
   item: CartItem;
 }
 
 export function CartItemDisplay({ item }: CartItemDisplayProps) {
-  const { updateQuantity, removeFromCart } = useCart();
-  const { toast } = useToast();
+  const { updateQuantity } = useCart();
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuantity = parseInt(e.target.value, 10);
@@ -33,23 +31,21 @@ export function CartItemDisplay({ item }: CartItemDisplayProps) {
   };
 
   const handleRemoveFromCart = () => {
-    removeFromCart(item.id);
-    toast({
-      title: "Produto Removido",
-      description: `${item.product.name} (Tam: ${item.size}) foi removido do carrinho.`,
-      variant: "destructive",
-    });
+    updateQuantity(item.id, 0); // Context will show toast
   };
+
+  const addonsPrice = item.addons.reduce((sum, addon) => sum + addon.price, 0);
+  const itemPrice = item.product.price + addonsPrice;
 
   const itemPriceFormatted = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-  }).format(item.product.price);
+  }).format(itemPrice);
 
   const itemSubtotalFormatted = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-  }).format(item.product.price * item.quantity);
+  }).format(itemPrice * item.quantity);
 
   return (
     <div className="flex items-start gap-4 py-4 border-b border-border/50">
@@ -60,11 +56,16 @@ export function CartItemDisplay({ item }: CartItemDisplayProps) {
         height={64}
         className="rounded-md object-cover aspect-square"
       />
-      <div className="flex-grow space-y-1">
+      <div className="flex-grow space-y-1.5">
         <h4 className="font-medium text-sm text-foreground leading-tight">{item.product.name}</h4>
         <p className="text-xs text-muted-foreground">
-          Tam: {item.size} &bull; {item.product.category}
+          Tam: {item.size}
         </p>
+        {item.addons.length > 0 && (
+          <div className="text-xs text-muted-foreground">
+            Opcionais: {item.addons.map(a => a.name).join(', ')}
+          </div>
+        )}
         <p className="text-xs text-muted-foreground">
           Preço Unit.: {itemPriceFormatted}
         </p>

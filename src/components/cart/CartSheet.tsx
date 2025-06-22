@@ -15,15 +15,9 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CartItemDisplay } from './CartItemDisplay';
 import { ShoppingCart, Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
-interface CartSheetProps {
-  children: React.ReactNode;
-}
-
-export function CartSheet({ children }: CartSheetProps) {
+export function CartSheet({ children }: { children: React.ReactNode }) {
   const { cartItems, itemCount, clearCart, totalPrice } = useCart();
-  const { toast } = useToast();
   const whatsappNumber = "5522999586820";
 
   const formattedTotalPrice = new Intl.NumberFormat('pt-BR', {
@@ -31,25 +25,28 @@ export function CartSheet({ children }: CartSheetProps) {
     currency: 'BRL',
   }).format(totalPrice);
 
-  const handleClearCart = () => {
-    clearCart();
-    toast({
-      title: "Carrinho Esvaziado",
-      description: "Todos os itens foram removidos do seu carrinho.",
-      variant: "default",
-    });
-  };
-
   const handleFinalizeOrder = () => {
     if (itemCount === 0) return;
 
-    let message = "Olá, gostaria de adquirir os seguintes produtos:\n";
+    let message = "Olá, gostaria de adquirir os seguintes produtos:\n\n";
     cartItems.forEach(item => {
-      const itemPriceFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.product.price);
-      const itemSubtotalFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.product.price * item.quantity);
-      message += `- ${item.product.name} | Tam: ${item.size} | Quant: ${item.quantity} | Unit.: ${itemPriceFormatted} | Subtotal: ${itemSubtotalFormatted}\n`;
+      const addonsPrice = item.addons.reduce((sum, addon) => sum + addon.price, 0);
+      const itemPrice = item.product.price + addonsPrice;
+      
+      const itemPriceFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(itemPrice);
+      const itemSubtotalFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(itemPrice * item.quantity);
+      
+      message += `👟 *${item.product.name}*\n`;
+      message += `   - Tamanho: ${item.size}\n`;
+      message += `   - Quantidade: ${item.quantity}\n`;
+      if (item.addons.length > 0) {
+        const addonsText = item.addons.map(a => `${a.name} (+${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(a.price)})`).join(', ');
+        message += `   - Opcionais: ${addonsText}\n`;
+      }
+      message += `   - Preço Unit. (c/ opc.): ${itemPriceFormatted}\n`;
+      message += `   - Subtotal: *${itemSubtotalFormatted}*\n\n`;
     });
-    message += `\nTotal do Pedido: ${formattedTotalPrice}`;
+    message += `*Total do Pedido: ${formattedTotalPrice}*`;
     
     const encodedMessage = encodeURIComponent(message.trim());
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
@@ -97,9 +94,9 @@ export function CartSheet({ children }: CartSheetProps) {
                 </Button>
                 <Button 
                     variant="outline" 
-                    onClick={handleClearCart} 
+                    onClick={clearCart} 
                     className="w-full border-destructive text-destructive hover:bg-destructive/10"
-                    size="lg"
+                    size="sm"
                 >
                   <Trash2 className="mr-2 h-4 w-4" /> Esvaziar Carrinho
                 </Button>

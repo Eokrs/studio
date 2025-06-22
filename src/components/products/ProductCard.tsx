@@ -32,11 +32,8 @@ export function ProductCard({ product }: ProductCardProps) {
       });
       return;
     }
-    addToCart(product, selectedSize);
-    toast({
-      title: "Produto Adicionado!",
-      description: `${product.name} (Tam: ${selectedSize}) foi adicionado ao seu carrinho.`,
-    });
+    // Quick add: quantity 1, no addons
+    addToCart(product, selectedSize, 1, []); 
     setSelectedSize(null); 
   };
 
