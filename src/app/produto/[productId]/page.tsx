@@ -17,13 +17,15 @@ export async function generateMetadata({ params }: { params: { productId: string
     };
   }
 
+  const description = product.description ? product.description.substring(0, 150) : '';
+
   return {
     title: `${product.name} | ${settings.siteName}`,
-    description: product.description.substring(0, 150),
+    description: description,
     keywords: [product.name, product.category, ...settings.seoKeywords],
     openGraph: {
       title: `${product.name} | ${settings.siteName}`,
-      description: product.description,
+      description: product.description || '',
       images: [
         {
           url: product.image,
