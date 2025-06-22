@@ -7,6 +7,7 @@ import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface CartItemDisplayProps {
   item: CartItem;
@@ -14,20 +15,30 @@ interface CartItemDisplayProps {
 
 export function CartItemDisplay({ item }: CartItemDisplayProps) {
   const { updateQuantity, removeFromCart } = useCart();
+  const { toast } = useToast();
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuantity = parseInt(e.target.value, 10);
     if (!isNaN(newQuantity)) {
-      updateQuantity(item.id, newQuantity); // Use item.id (composite ID)
+      updateQuantity(item.id, newQuantity);
     }
   };
 
   const handleIncrement = () => {
-    updateQuantity(item.id, item.quantity + 1); // Use item.id
+    updateQuantity(item.id, item.quantity + 1);
   };
 
   const handleDecrement = () => {
-    updateQuantity(item.id, item.quantity - 1); // Use item.id
+    updateQuantity(item.id, item.quantity - 1);
+  };
+
+  const handleRemoveFromCart = () => {
+    removeFromCart(item.id);
+    toast({
+      title: "Produto Removido",
+      description: `${item.product.name} (Tam: ${item.size}) foi removido do carrinho.`,
+      variant: "destructive",
+    });
   };
 
   const itemPriceFormatted = new Intl.NumberFormat('pt-BR', {
@@ -81,7 +92,7 @@ export function CartItemDisplay({ item }: CartItemDisplayProps) {
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={() => removeFromCart(item.id)} // Use item.id
+          onClick={handleRemoveFromCart}
           className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 h-7 w-7"
           aria-label={`Remover ${item.product.name} (Tam: ${item.size}) do carrinho`}
         >

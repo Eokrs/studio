@@ -2,6 +2,7 @@
 "use client";
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { m } from 'framer-motion';
 import type { Product } from '@/data/products';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +33,10 @@ export function ProductCard({ product }: ProductCardProps) {
       return;
     }
     addToCart(product, selectedSize);
+    toast({
+      title: "Produto Adicionado!",
+      description: `${product.name} (Tam: ${selectedSize}) foi adicionado ao seu carrinho.`,
+    });
     setSelectedSize(null); 
   };
 
@@ -47,23 +52,24 @@ export function ProductCard({ product }: ProductCardProps) {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      whileHover={{ scale: 1.03, y: -5 }}
       className="glass-card glass-interactive overflow-hidden h-full flex flex-col"
     >
-      <CardHeader className="p-0 relative aspect-square w-full overflow-hidden">
-        <Image
-          src={product.image}
-          alt={product.name}
-          width={400}
-          height={400}
-          className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
-          data-ai-hint="shoe fashion" 
-        />
-        <span className="absolute top-3 left-3 z-10 flex items-center px-3 py-1.5 text-xs font-semibold rounded-full bg-card/70 dark:bg-card/50 backdrop-blur-sm text-foreground/90 shadow-lg border border-white/20 dark:border-white/10">
-          <TagIcon className="inline-block h-3.5 w-3.5 mr-1.5 text-primary" />
-          {product.category}
-        </span>
-      </CardHeader>
+      <Link href={`/produto/${product.id}`} aria-label={`Ver detalhes de ${product.name}`}>
+        <CardHeader className="p-0 relative aspect-square w-full overflow-hidden group">
+          <Image
+            src={product.image}
+            alt={product.name}
+            width={400}
+            height={400}
+            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+            data-ai-hint="shoe fashion" 
+          />
+          <span className="absolute top-3 left-3 z-10 flex items-center px-3 py-1.5 text-xs font-semibold rounded-full bg-card/70 dark:bg-card/50 backdrop-blur-sm text-foreground/90 shadow-lg border border-white/20 dark:border-white/10">
+            <TagIcon className="inline-block h-3.5 w-3.5 mr-1.5 text-primary" />
+            {product.category}
+          </span>
+        </CardHeader>
+      </Link>
       <CardContent className="p-3 flex-grow">
         <CardTitle className="font-headline text-lg mb-1 text-foreground">{product.name}</CardTitle>
         <CardDescription className="text-xs text-muted-foreground mb-2 line-clamp-2">{product.description}</CardDescription>

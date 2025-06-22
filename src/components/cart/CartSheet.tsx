@@ -15,19 +15,30 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CartItemDisplay } from './CartItemDisplay';
 import { ShoppingCart, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface CartSheetProps {
-  children: React.ReactNode; // For the trigger
+  children: React.ReactNode;
 }
 
 export function CartSheet({ children }: CartSheetProps) {
-  const { cartItems, itemCount, clearCart, totalPrice } = useCart(); // Added totalPrice
+  const { cartItems, itemCount, clearCart, totalPrice } = useCart();
+  const { toast } = useToast();
   const whatsappNumber = "5522999586820";
 
   const formattedTotalPrice = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
   }).format(totalPrice);
+
+  const handleClearCart = () => {
+    clearCart();
+    toast({
+      title: "Carrinho Esvaziado",
+      description: "Todos os itens foram removidos do seu carrinho.",
+      variant: "default",
+    });
+  };
 
   const handleFinalizeOrder = () => {
     if (itemCount === 0) return;
@@ -44,7 +55,6 @@ export function CartSheet({ children }: CartSheetProps) {
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
     
     window.open(whatsappUrl, '_blank');
-    // clearCart(); // Optional: clear cart after sending
   };
 
   return (
@@ -68,7 +78,7 @@ export function CartSheet({ children }: CartSheetProps) {
             <ScrollArea className="flex-grow p-6">
               <div className="space-y-2">
                 {cartItems.map(item => (
-                  <CartItemDisplay key={item.id} item={item} /> // Use item.id as key
+                  <CartItemDisplay key={item.id} item={item} />
                 ))}
               </div>
             </ScrollArea>
@@ -87,7 +97,7 @@ export function CartSheet({ children }: CartSheetProps) {
                 </Button>
                 <Button 
                     variant="outline" 
-                    onClick={clearCart} 
+                    onClick={handleClearCart} 
                     className="w-full border-destructive text-destructive hover:bg-destructive/10"
                     size="lg"
                 >
