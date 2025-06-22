@@ -34,17 +34,14 @@ export function CartItemDisplay({ item }: CartItemDisplayProps) {
     updateQuantity(item.id, 0); // Context will show toast
   };
 
-  const itemPrice = item.product.price;
-
-  const itemPriceFormatted = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(itemPrice);
+  const itemBasePrice = item.product.price;
+  const addonsPrice = item.addons.reduce((total, addon) => total + addon.price, 0);
+  const totalItemPrice = itemBasePrice + addonsPrice;
 
   const itemSubtotalFormatted = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-  }).format(itemPrice * item.quantity);
+  }).format(totalItemPrice * item.quantity);
 
   return (
     <div className="flex items-start gap-4 py-4 border-b border-border/50">
@@ -60,10 +57,17 @@ export function CartItemDisplay({ item }: CartItemDisplayProps) {
         <p className="text-xs text-muted-foreground">
           Tam: {item.size}
         </p>
-        <p className="text-xs text-muted-foreground">
-          Preço Unit.: {itemPriceFormatted}
-        </p>
-         <p className="text-sm font-medium text-foreground">
+        {item.addons.length > 0 && (
+            <div className="text-xs text-muted-foreground">
+                <span className="font-medium">Adicionais:</span>
+                <ul className="list-disc list-inside pl-1">
+                    {item.addons.map(addon => (
+                        <li key={addon.name}>{addon.name}</li>
+                    ))}
+                </ul>
+            </div>
+        )}
+        <p className="text-sm font-medium text-foreground">
           Subtotal: {itemSubtotalFormatted}
         </p>
       </div>
@@ -84,9 +88,9 @@ export function CartItemDisplay({ item }: CartItemDisplayProps) {
             +
           </Button>
         </div>
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={handleRemoveFromCart}
           className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 h-7 w-7"
           aria-label={`Remover ${item.product.name} (Tam: ${item.size}) do carrinho`}

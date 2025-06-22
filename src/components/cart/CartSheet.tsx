@@ -15,6 +15,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CartItemDisplay } from './CartItemDisplay';
 import { ShoppingCart, Trash2 } from 'lucide-react';
+import type { Addon } from '@/types/cart';
 
 export function CartSheet({ children }: { children: React.ReactNode }) {
   const { cartItems, itemCount, clearCart, totalPrice } = useCart();
@@ -30,15 +31,18 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
 
     let message = "Olá, gostaria de adquirir os seguintes produtos:\n\n";
     cartItems.forEach(item => {
-      const itemPrice = item.product.price;
+      const itemBasePrice = item.product.price;
+      const addonsPrice = item.addons.reduce((total, addon) => total + addon.price, 0);
+      const totalItemPrice = itemBasePrice + addonsPrice;
       
-      const itemPriceFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(itemPrice);
-      const itemSubtotalFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(itemPrice * item.quantity);
+      const itemSubtotalFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalItemPrice * item.quantity);
       
       message += `👟 *${item.product.name}*\n`;
       message += `   - Tamanho: ${item.size}\n`;
       message += `   - Quantidade: ${item.quantity}\n`;
-      message += `   - Preço Unit.: ${itemPriceFormatted}\n`;
+      if (item.addons.length > 0) {
+        message += `   - Adicionais: ${item.addons.map(a => a.name).join(', ')}\n`;
+      }
       message += `   - Subtotal: *${itemSubtotalFormatted}*\n\n`;
     });
     message += `*Total do Pedido: ${formattedTotalPrice}*`;

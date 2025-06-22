@@ -4,12 +4,12 @@
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { Product } from '@/data/products';
-import type { CartItem } from '@/types/cart';
+import type { CartItem, Addon } from '@/types/cart';
 import { useToast } from '@/hooks/use-toast';
 
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (product: Product, size: string, quantity: number) => void;
+  addToCart: (product: Product, size: string, quantity: number, addons: Addon[]) => void;
   removeFromCart: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
@@ -43,24 +43,25 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error("Failed to parse cart from localStorage", error);
-      localStorage.removeItem('nuvyraCart'); 
+      localStorage.removeItem('nuvyraCart');
     }
   }, []);
 
   useEffect(() => {
-    if (cartItems.length >= 0) { // Also save when cart becomes empty
-        try {
-            const serializedCart = JSON.stringify(cartItems);
-            localStorage.setItem('nuvyraCart', serializedCart);
-        } catch (error) {
-            console.error("Failed to save cart to localStorage", error);
-        }
+    try {
+      const serializedCart = JSON.stringify(cartItems);
+      localStorage.setItem('nuvyraCart', serializedCart);
+    } catch (error) {
+      console.error("Failed to save cart to localStorage", error);
     }
   }, [cartItems]);
 
-  const addToCart = useCallback((product: Product, size: string, quantity: number) => {
-    const itemId = `${product.id}-${size}`;
-    
+  const addToCart = useCallback((product: Product, size: string, quantity: number, addons: Addon[]) => {
+    // Sort addons by name to ensure consistent ID generation
+    const sortedAddons = [...addons].sort((a, b) => a.name.localeCompare(b.name));
+    const addonsId = JSON.stringify(sortedAddons.map(a => a.name));
+    const itemId = `${product.id}-${size}-${addonsId}`;
+
     setCartItems((prevItems) => {
       const existingItem = prevItems.find(item => item.id === itemId);
       if (existingItem) {
@@ -70,14 +71,9 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
             : item
         );
       }
-      return [...prevItems, { id: itemId, product, quantity, size }];
+      return [...prevItems, { id: itemId, product, quantity, size, addons: sortedAddons }];
     });
-
-    toast({
-      title: "Produto Adicionado!",
-      description: `${product.name} (Tam: ${size}) x${quantity} foi adicionado ao seu carrinho.`,
-    });
-  }, [toast]);
+  }, []);
 
   const updateQuantity = useCallback((itemId: string, quantity: number) => {
     setCartItems((prevItems) => {
@@ -93,15 +89,13 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         return prevItems.filter(item => item.id !== itemId);
       }
       return prevItems.map(item =>
-        item.id === itemId
-          ? { ...item, quantity }
-          : item
+        item.id === itemId ? { ...item, quantity } : item
       );
     });
   }, [toast]);
 
   const removeFromCart = useCallback((itemId: string) => {
-    updateQuantity(itemId, 0); 
+    updateQuantity(itemId, 0);
   }, [updateQuantity]);
 
   const clearCart = useCallback(() => {
@@ -114,10 +108,12 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }, [toast]);
 
   const itemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
-  
+
   const totalPrice = cartItems.reduce((total, item) => {
-    const itemPrice = (item.product.price || 0);
-    return total + (itemPrice * item.quantity);
+    const basePrice = item.product.price || 0;
+    const addonsPrice = item.addons.reduce((addonTotal, addon) => addonTotal + addon.price, 0);
+    const itemTotal = (basePrice + addonsPrice) * item.quantity;
+    return total + itemTotal;
   }, 0);
 
   return (
