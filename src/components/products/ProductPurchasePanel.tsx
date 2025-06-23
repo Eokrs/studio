@@ -8,7 +8,7 @@ import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { Check, Minus, Plus, ShoppingCartIcon } from 'lucide-react';
+import { Check, Minus, Plus, ShoppingCartIcon, TagIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const SIZES = ["37", "38", "39", "40", "41", "42", "43", "44"];
@@ -71,8 +71,13 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
   return (
     <div className="flex flex-col space-y-6">
       <div>
-        <p className="text-sm text-muted-foreground">{product.category}</p>
-        <h1 className="text-3xl lg:text-4xl font-bold font-headline text-foreground">{product.name}</h1>
+        {product.category && (
+            <span className="mb-2 inline-flex items-center rounded-full bg-sky-100 dark:bg-sky-900/70 px-3 py-1 text-sm font-semibold text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-500/30">
+                <TagIcon className="mr-1.5 h-4 w-4" />
+                {product.category}
+            </span>
+        )}
+        <h1 className="text-3xl lg:text-4xl font-bold font-headline text-foreground mt-2">{product.name}</h1>
         <p className="text-2xl font-semibold text-emerald-600 dark:text-emerald-500 mt-2">{formattedBasePrice}</p>
         {product.description && <p className="text-muted-foreground mt-4">{product.description}</p>}
       </div>
