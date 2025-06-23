@@ -140,6 +140,8 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
           <p className="font-semibold">Processo de Compra:</p>
           <p>1. Realize o pedido e o pagamento via WhatsApp.</p>
           <p>2. Aguarde o envio das fotos de controle de qualidade (QC) e pesagem (1-3 dias úteis).</p>
+          <p>3. Confirme e pague pelo frete.</p>
+          <p>4. Receba seu pacote.</p>
       </div>
     </div>
   );
