@@ -161,7 +161,6 @@ export function ProductShowcaseSection() {
                           className="w-full h-full"
                           priority={currentSlide === 0}
                       />
-                       <div className="absolute inset-0 bg-black/40" />
                   </m.div>
               </AnimatePresence>
 
@@ -174,27 +173,6 @@ export function ProductShowcaseSection() {
                           aria-label={`Go to slide ${index + 1}`}
                       />
                   ))}
-              </div>
-
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white p-4 z-10">
-                   <m.h2 
-                      key={currentSlide + '-title'}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
-                      className="font-headline text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg"
-                  >
-                      Nossa Vitrine
-                  </m.h2>
-                  <m.p 
-                      key={currentSlide + '-desc'}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.4, ease: 'easeOut' }}
-                      className="text-md md:text-lg text-white/90 drop-shadow-md max-w-xl"
-                  >
-                      Explore nossa coleção de produtos cuidadosamente selecionados para você.
-                  </m.p>
               </div>
           </div>
         )}
