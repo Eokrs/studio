@@ -1,4 +1,3 @@
-
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { getProductById } from '@/app/actions/productActions';
@@ -6,7 +5,11 @@ import { ProductPurchasePanel } from '@/components/products/ProductPurchasePanel
 import { getSiteSettings } from '@/app/actions/settingsActions';
 import type { Metadata } from 'next';
 
-export async function generateMetadata({ params }: { params: { productId: string } }): Promise<Metadata> {
+interface Props {
+  params: { productId: string };
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const [product, settings] = await Promise.all([
     getProductById(params.productId),
     getSiteSettings(),
@@ -41,7 +44,7 @@ export async function generateMetadata({ params }: { params: { productId: string
   };
 }
 
-export default async function ProductPage({ params }: { params: { productId: string } }) {
+export default async function ProductPage({ params }: Props) {
   const product = await getProductById(params.productId);
 
   if (!product || !product.is_active) {
