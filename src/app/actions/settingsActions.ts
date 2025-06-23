@@ -16,6 +16,7 @@ const defaultSettings: SiteSettings = {
   defaultSeoTitle: 'Nuvyra Store: Tênis Importados da China 1:1 - Qualidade e Estilo',
   defaultSeoDescription: 'Explore a Nuvyra Store, sua vitrine exclusiva de tênis importados da China com qualidade 1:1. Encontre modelos autênticos e cobiçados.',
   seoKeywords: ['tênis importados', 'qualidade 1:1', 'Nuvyra Store', 'réplicas premium'],
+  bannerImages: ['https://placehold.co/1200x400.png'],
 };
 
 const SETTINGS_ROW_ID = 1; 
@@ -25,7 +26,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
     const supabase = createServerActionClient<Database>({ cookies });
     const { data, error } = await supabase
       .from('site_settings')
-      .select('site_name, default_seo_title, default_seo_description, seo_keywords')
+      .select('site_name, default_seo_title, default_seo_description, seo_keywords, banner_images')
       .eq('id', SETTINGS_ROW_ID)
       .single();
 
@@ -44,6 +45,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
         defaultSeoTitle: data.default_seo_title,
         defaultSeoDescription: data.default_seo_description,
         seoKeywords: data.seo_keywords,
+        bannerImages: data.banner_images || [],
       };
     }
   } catch (e) {

@@ -64,6 +64,7 @@ export interface Database {
           default_seo_title: string;
           default_seo_description: string;
           seo_keywords: string[];
+          banner_images: string[];
           created_at: string;
           updated_at: string;
         };
@@ -73,6 +74,7 @@ export interface Database {
           default_seo_title: string;
           default_seo_description: string;
           seo_keywords: string[];
+          banner_images?: string[];
           created_at?: string;
           updated_at?: string;
         };
@@ -82,6 +84,7 @@ export interface Database {
           default_seo_title?: string;
           default_seo_description?: string;
           seo_keywords?: string[];
+          banner_images?: string[];
           updated_at?: string;
         };
       };

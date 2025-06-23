@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Types and schemas related to site settings.
  */
@@ -12,4 +11,5 @@ export type SiteSettings = {
   defaultSeoTitle: string;
   defaultSeoDescription: string;
   seoKeywords: string[];
+  bannerImages: string[];
 };

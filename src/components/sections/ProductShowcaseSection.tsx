@@ -2,12 +2,14 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import { AnimatePresence, m } from 'framer-motion';
 import type { Product } from '@/data/products';
 import { ProductCard } from '@/components/products/ProductCard';
 import { CategoryFilters } from '@/components/products/CategoryFilters';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { getProducts, getCategories } from '@/app/actions/productActions';
+import { getSiteSettings } from '@/app/actions/settingsActions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Loader2 } from 'lucide-react';
@@ -26,22 +28,24 @@ export function ProductShowcaseSection() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [displayedProductsCount, setDisplayedProductsCount] = useState(PRODUCTS_PER_PAGE);
+  const [bannerImages, setBannerImages] = useState<string[]>([]);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     async function fetchData() {
       try {
         setIsLoading(true);
         setError(null);
-        const [fetchedProducts, fetchedCategoriesWithCount] = await Promise.all([
-          getProducts(), // Fetches all active products by default
-          getCategories() // Fetches categories with their active product counts
+        const [fetchedProducts, fetchedCategoriesWithCount, fetchedSettings] = await Promise.all([
+          getProducts(),
+          getCategories(),
+          getSiteSettings(),
         ]);
         
-        // Filter products to only include those that are active (is_active: true)
-        // getProducts already implies active, but double-checking or relying on its internal filter is key
-        const activeProducts = fetchedProducts.filter(p => p.is_active !== false); // Assuming is_active is true if undefined
+        const activeProducts = fetchedProducts.filter(p => p.is_active !== false);
         setAllProducts(activeProducts);
         setProductCategoriesWithCount(fetchedCategoriesWithCount);
+        setBannerImages(fetchedSettings.bannerImages && fetchedSettings.bannerImages.length > 0 ? fetchedSettings.bannerImages : ['https://placehold.co/1200x400.png']);
 
       } catch (err) {
         console.error("Failed to fetch product data:", err);
@@ -56,6 +60,15 @@ export function ProductShowcaseSection() {
     }
     fetchData();
   }, []);
+  
+  useEffect(() => {
+    if (bannerImages.length > 1) {
+        const timer = setInterval(() => {
+            setCurrentSlide((prev) => (prev + 1) % bannerImages.length);
+        }, 5000); // Change slide every 5 seconds
+        return () => clearInterval(timer);
+    }
+  }, [bannerImages.length]);
 
   const filteredProducts = useMemo(() => {
     if (selectedCategory === "Todos") {
@@ -77,7 +90,6 @@ export function ProductShowcaseSection() {
   };
 
   useEffect(() => {
-    // Reset displayed count when category changes
     setDisplayedProductsCount(PRODUCTS_PER_PAGE);
   }, [selectedCategory]);
 
@@ -85,14 +97,7 @@ export function ProductShowcaseSection() {
     return (
       <section id="produtos" className="py-16 lg:py-24 bg-background">
         <div className="container mx-auto px-4">
-          <ScrollReveal>
-            <h2 className="font-headline text-4xl md:text-5xl font-bold text-center mb-4 text-foreground">
-              Nossa Vitrine
-            </h2>
-            <p className="text-lg text-muted-foreground text-center mb-12 max-w-xl mx-auto">
-              Carregando produtos incríveis para você...
-            </p>
-          </ScrollReveal>
+          <Skeleton className="h-64 md:h-80 w-full mb-12 rounded-lg bg-muted/50" />
           <div className="flex flex-wrap justify-center gap-2 mb-8">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-10 w-24 rounded-full bg-muted/50" />
@@ -137,23 +142,69 @@ export function ProductShowcaseSection() {
   return (
     <section id="produtos" className="py-16 lg:py-24 bg-background">
       <div className="container mx-auto px-4">
-        <ScrollReveal>
-          <h2 className="font-headline text-4xl md:text-5xl font-bold text-center mb-4 text-foreground">
-            Nossa Vitrine
-          </h2>
-          <p className="text-lg text-muted-foreground text-center mb-12 max-w-xl mx-auto">
-            Explore nossa coleção de produtos cuidadosamente selecionados para você.
-          </p>
-        </ScrollReveal>
+        {bannerImages.length > 0 && (
+          <div className="relative w-full h-56 sm:h-64 md:h-80 mb-12 rounded-lg overflow-hidden shadow-lg group">
+              <AnimatePresence initial={false}>
+                  <m.div
+                      key={currentSlide}
+                      className="absolute inset-0"
+                      initial={{ opacity: 0, scale: 1.05 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 1.05 }}
+                      transition={{ duration: 0.8, ease: 'easeInOut' }}
+                  >
+                      <Image
+                          src={bannerImages[currentSlide]}
+                          alt={`Banner image ${currentSlide + 1}`}
+                          layout="fill"
+                          objectFit="cover"
+                          className="w-full h-full"
+                          priority={currentSlide === 0}
+                      />
+                       <div className="absolute inset-0 bg-black/40" />
+                  </m.div>
+              </AnimatePresence>
 
-        <ScrollReveal delay={0.2}>
-          <CategoryFilters
-            categoriesWithCount={productCategoriesWithCount}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-            totalActiveProducts={allProducts.length}
-          />
-        </ScrollReveal>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                  {bannerImages.map((_, index) => (
+                      <button
+                          key={index}
+                          onClick={() => setCurrentSlide(index)}
+                          className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${currentSlide === index ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/80'}`}
+                          aria-label={`Go to slide ${index + 1}`}
+                      />
+                  ))}
+              </div>
+
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white p-4 z-10">
+                   <m.h2 
+                      key={currentSlide + '-title'}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+                      className="font-headline text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg"
+                  >
+                      Nossa Vitrine
+                  </m.h2>
+                  <m.p 
+                      key={currentSlide + '-desc'}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.4, ease: 'easeOut' }}
+                      className="text-md md:text-lg text-white/90 drop-shadow-md max-w-xl"
+                  >
+                      Explore nossa coleção de produtos cuidadosamente selecionados para você.
+                  </m.p>
+              </div>
+          </div>
+        )}
+
+        <CategoryFilters
+          categoriesWithCount={productCategoriesWithCount}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          totalActiveProducts={allProducts.length}
+        />
         
         <m.div
           layout
@@ -184,7 +235,7 @@ export function ProductShowcaseSection() {
               onClick={handleLoadMore}
               size="lg"
               variant="outline"
-              className="bg-primary text-primary-foreground shadow-md transition-all duration-300 hover:bg-primary/60 dark:hover:bg-primary/40 hover:backdrop-blur-md hover:shadow-lg hover:border hover:border-primary/30 dark:hover:border-primary/20"
+              className="bg-primary text-primary-foreground shadow-md transition-all duration-300 hover:bg-primary/80 hover:shadow-lg"
             >
               Carregar Mais Produtos
               <Loader2 className="ml-2 h-5 w-5 animate-spin hidden" /> 
@@ -195,4 +246,3 @@ export function ProductShowcaseSection() {
     </section>
   );
 }
-
