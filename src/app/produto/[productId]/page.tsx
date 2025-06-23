@@ -9,6 +9,7 @@ interface Props {
   params: { productId: string };
 }
 
+/*
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const [product, settings] = await Promise.all([
     getProductById(params.productId),
@@ -43,6 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
   };
 }
+*/
 
 export default async function ProductPage({ params }: Props) {
   const product = await getProductById(params.productId);
