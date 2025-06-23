@@ -6,13 +6,7 @@ import { ProductPurchasePanel } from '@/components/products/ProductPurchasePanel
 import { getSiteSettings } from '@/app/actions/settingsActions';
 import type { Metadata } from 'next';
 
-type ProductPageProps = {
-  params: {
-    productId: string;
-  };
-};
-
-export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: { productId: string } }): Promise<Metadata> {
   const [product, settings] = await Promise.all([
     getProductById(params.productId),
     getSiteSettings(),
@@ -47,7 +41,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   };
 }
 
-export default async function ProductPage({ params }: ProductPageProps) {
+export default async function ProductPage({ params }: { params: { productId: string } }) {
   const product = await getProductById(params.productId);
 
   if (!product || !product.is_active) {
