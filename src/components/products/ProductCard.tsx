@@ -15,6 +15,9 @@ const getCategoryStyle = (_category: string) => {
     return 'bg-sky-900/70 text-sky-300 border-sky-500/30';
 };
 
+interface ProductCardProps {
+  product: Product;
+}
 
 export function ProductCard({ product }: ProductCardProps) {
   const hasValidPrice = product.price && product.price > 0;
@@ -29,7 +32,6 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <Link href={`/produto/${product.id}`} passHref>
       <m.div
-        layout
         whileHover={{ scale: 1.05, y: -5 }}
         whileTap={{ scale: 0.98 }}
         initial={{ opacity: 0, scale: 0.9 }}
