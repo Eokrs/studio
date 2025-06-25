@@ -36,7 +36,6 @@ export function ProductCard({ product }: ProductCardProps) {
         whileTap={{ scale: 0.98 }}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
         className="bg-white/5 backdrop-blur-sm rounded-xl overflow-hidden h-full flex flex-col cursor-pointer border border-transparent hover:border-cyan-400/50 transition-all duration-300 ease-in-out shadow-lg"
       >
