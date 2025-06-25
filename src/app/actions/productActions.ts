@@ -7,7 +7,6 @@
  * - getProductById - Fetches a single product by its ID.
  * - getCategories - Fetches all unique active product categories with their counts, based on valid products.
  * - searchProductsByName - Fetches products matching a search query.
- * - getRelatedProducts - Fetches products similar to a given product.
  */
 import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers'; 
@@ -134,32 +133,4 @@ export async function searchProductsByName(query: string): Promise<Product[]> {
     return [];
   }
   return data as Product[] || [];
-}
-
-export async function getRelatedProducts(
-  currentProductId: string,
-  category: string
-): Promise<Product[]> {
-  const supabase = createServerActionClient<Database>({ cookies });
-
-  const { data, error } = await supabase
-    .from('products')
-    .select('id, name, description, image, category, price, created_at, is_active')
-    .eq('category', category)
-    .neq('id', currentProductId)
-    .eq('is_active', true)
-    .not('name', 'is', null)
-    .filter('name', 'neq', '')
-    .not('image', 'is', null)
-    .filter('image', 'neq', '')
-    .not('price', 'is', null)
-    .order('created_at', { ascending: false })
-    .limit(6);
-
-  if (error) {
-    console.error('Supabase error fetching related products:', error);
-    return [];
-  }
-
-  return (data as Product[]) || [];
 }
