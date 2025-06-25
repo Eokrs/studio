@@ -156,9 +156,8 @@ export function ProductShowcaseSection() {
                       <Image
                           src={bannerImages[currentSlide]}
                           alt={`Banner image ${currentSlide + 1}`}
-                          layout="fill"
-                          objectFit="cover"
-                          className="w-full h-full"
+                          fill
+                          className="object-contain"
                           priority={currentSlide === 0}
                       />
                   </m.div>
