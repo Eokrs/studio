@@ -15,11 +15,10 @@ import type { Product } from '@/data/products';
 
 export async function getProducts(options?: { limit?: number; offset?: number }): Promise<Product[]> {
   const supabase = createServerActionClient<Database>({ cookies });
-  const { limit = 20, offset = 0 } = options || {};
 
   let query = supabase
     .from('products')
-    .select('id, name, description, image, category, price, created_at, is_active') // Added price
+    .select('id, name, description, image, category, price, created_at, is_active')
     .eq('is_active', true)
     .not('name', 'is', null)
     .filter('name', 'neq', '')
@@ -27,9 +26,14 @@ export async function getProducts(options?: { limit?: number; offset?: number })
     .filter('image', 'neq', '')
     .not('category', 'is', null)
     .filter('category', 'neq', '')
-    .not('price', 'is', null) // Ensure price is not null
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+    .not('price', 'is', null)
+    .order('created_at', { ascending: false });
+
+  // Only apply a range limit if options are explicitly provided
+  if (options?.limit) {
+    const { limit = 20, offset = 0 } = options;
+    query = query.range(offset, offset + limit - 1);
+  }
 
   const { data, error } = await query;
 
