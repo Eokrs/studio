@@ -4,6 +4,7 @@ import { getProductById } from '@/app/actions/productActions';
 import { ProductPurchasePanel } from '@/components/products/ProductPurchasePanel';
 import { getSiteSettings } from '@/app/actions/settingsActions';
 import type { Metadata } from 'next';
+import { Breadcrumb } from '@/components/products/Breadcrumb';
 
 interface Props {
   params: { productId: string };
@@ -55,6 +56,7 @@ export default async function ProductPage({ params }: Props) {
 
   return (
     <div className="container mx-auto px-4 py-8 pt-28 md:py-16 lg:py-24">
+      <Breadcrumb product={product} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
         {/* Coluna da Imagem */}
         <div className="w-full">
